@@ -351,15 +351,15 @@ export function activate(context: vscode.ExtensionContext) {
                 }
                 responseText = responseText.replace(/=/g, " = ").replace(/</g, " < ").replace(/>/g, " > ").trim();
                 let trimmedKey = key.trim();
-                if (trimmedKey.length > 18) {
-                    trimmedKey = trimmedKey.substring(0, 10) + "..";
-                }
+                // if (trimmedKey.length > 18) {
+                //     trimmedKey = trimmedKey.substring(0, 10) + "..";
+                // }
                 let completionFinalText = new vscode.CompletionItem(responseText);
               // sortText to sort the phrase candidates by frequency
               completionFinalText.sortText = sortText;
               // Set the frequency for each phrase group to be output as Docs
               const completionDocs = new vscode.MarkdownString(
-                "Frequency : " + value 
+                trimmedKey
               );
               // Writing documentation for Completion
               completionFinalText.documentation = completionDocs;
@@ -404,7 +404,7 @@ export function activate(context: vscode.ExtensionContext) {
               // Remove Completion item from response text
               let extractedText = '';
               if (typeof item.label === 'string') {
-                extractedText = item.label;
+                extractedText=item.label;
               }
               // if (typeof item.label === 'string') {
               //   // Split and extract text based on '|'
