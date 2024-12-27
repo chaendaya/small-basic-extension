@@ -284,16 +284,16 @@ function activate(context) {
                             responseText = normalizedResponseText.replace(normalizedlinePrefix, '');
                             console.log("Response After Removing Line Matching Prefix:", responseText);
                         }
-                        responseText = responseText.replace(/\(/g, " ( ").replace(/\)/g, " ) ").replace(/=/g, " = ").replace(/</g, " < ").replace(/>/g, " > ").trim();
+                        responseText = responseText.replace(/=/g, " = ").replace(/</g, " < ").replace(/>/g, " > ").trim();
                         let trimmedKey = key.trim();
-                        if (trimmedKey.length > 18) {
-                            trimmedKey = trimmedKey.substring(0, 10) + "..";
-                        }
+                        // if (trimmedKey.length > 18) {
+                        //     trimmedKey = trimmedKey.substring(0, 10) + "..";
+                        // }
                         let completionFinalText = new vscode.CompletionItem(responseText);
                         // sortText to sort the phrase candidates by frequency
                         completionFinalText.sortText = sortText;
                         // Set the frequency for each phrase group to be output as Docs
-                        const completionDocs = new vscode.MarkdownString("Frequency : " + value);
+                        const completionDocs = new vscode.MarkdownString(trimmedKey);
                         // Writing documentation for Completion
                         completionFinalText.documentation = completionDocs;
                         // Code suggestion Code to prevent filtering by prefix
@@ -332,28 +332,28 @@ function activate(context) {
                 if (item && sbSnippetGenerator !== null) {
                     //console.log("item: ",item.label);
                     // Remove Completion item from response text
-                  let extractedText = '';
-                  if (typeof item.label === 'string') {
-                    extractedText = item.label;
-                  }
-                  // if (typeof item.label === 'string') {
-                  //   // Split and extract text based on '|'
-                  //   const labelParts = item.label.split('|').map(part => part.trim());
-                  //   if (labelParts.length > 1) {
-                  //       extractedText = labelParts[1]; // Text after '|'
-                  //       // Ensure the left part of the label is not included
-                  //       const leftPart = labelParts[0].replace(/\s+/g, ''); // Normalize by removing spaces
-                  //       const normalizedExtracted = extractedText.replace(/\s+/g, ''); // Normalize the extracted text
-                  //       if (normalizedExtracted.includes(leftPart)) {
-                  //           extractedText = extractedText
-                  //               .replace(new RegExp(leftPart.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), '')
-                  //               .trim();
-                  //       }
-                  //   }
-                  // } else if (typeof item.label === 'object') {
-                  //   //console.error("CompletionItemLabel structure detected; please adjust extraction logic.");
-                  // }
-                  //console.log("Extracted Text: ", extractedText);
+                    let extractedText = '';
+                    if (typeof item.label === 'string') {
+                        extractedText = item.label;
+                    }
+                    // if (typeof item.label === 'string') {
+                    //   // Split and extract text based on '|'
+                    //   const labelParts = item.label.split('|').map(part => part.trim());
+                    //   if (labelParts.length > 1) {
+                    //       extractedText = labelParts[1]; // Text after '|'
+                    //       // Ensure the left part of the label is not included
+                    //       const leftPart = labelParts[0].replace(/\s+/g, ''); // Normalize by removing spaces
+                    //       const normalizedExtracted = extractedText.replace(/\s+/g, ''); // Normalize the extracted text
+                    //       if (normalizedExtracted.includes(leftPart)) {
+                    //           extractedText = extractedText
+                    //               .replace(new RegExp(leftPart.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), '')
+                    //               .trim();
+                    //       }
+                    //   }
+                    // } else if (typeof item.label === 'object') {
+                    //   //console.error("CompletionItemLabel structure detected; please adjust extraction logic.");
+                    // }
+                    //console.log("Extracted Text: ", extractedText);
                     const lastIndex = linePrefix.length - 1;
                     let insertText;
                     //console.log("linePrefix:", linePrefix);
