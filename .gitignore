@@ -1,0 +1,17 @@
+# 1. 의존성 라이브러리 (Dependencies)
+node_modules/
+
+# 2. 빌드 결과물 (Build Outputs)
+out/
+build/
+
+# 3. 보안 파일
+secrets.json
+
+# 4. 로그 및 임시 데이터 (Logs & Temp)
+logged_actions.txt
+Test.data
+
+# 5. VS Code 설정 및 패키징 파일 (Editor & Packaging)
+.vscode/
+*.vsix

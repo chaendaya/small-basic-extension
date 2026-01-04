@@ -16,37 +16,9 @@
   "contributes": {
     "keybindings": [
       {
-        "command": "extension.hotkey",
+        "command": "extension.promptkey",
         "key": "ctrl+space",
         "when": "editorTextFocus && !suggestWidgetVisible"
-      },
-      {
-        "command": "extension.completeCode",
-        "key": "ctrl+shift+i",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "extension.promptkey",
-        "key": "ctrl+c",
-        "when": "editorTextFocus && !suggestWidgetVisible"
-      }
-    ],
-    "commands": [
-      {
-        "command": "extension.hotkey",
-        "title": "hotkey"
-      },
-      {
-        "command": "extension.subhotkey",
-        "title": "subhotkey"
-      },
-      {
-        "command": "extension.Triggertest",
-        "title": "Triggertest"
-      },
-      {
-        "command": "extension.completeCode",
-        "title": "Complete Code"
       }
     ],
     "languages": [
@@ -61,13 +33,6 @@
           ".smallbasic"
         ],
         "configuration": "./sb-language-configuration.json"
-      },
-      {
-        "id": "c",
-        "extensions": [
-          ".c"
-        ],
-        "configuration": "./c-language-configuration.json"
       }
     ],
     "grammars": [
@@ -96,10 +61,13 @@
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
     "eslint": "^8.56.0",
+    "node-gyp": "^12.1.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "bindings": "^1.5.0",
     "net": "^1.0.2",
+    "node-addon-api": "^8.5.0",
     "openai": "^4.47.1",
     "ws": "^8.17.0"
   }
