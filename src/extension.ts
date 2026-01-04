@@ -1,33 +1,41 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-// plz 'npm install' initial of cloneproject
+/**
+ * @file extension.ts
+ * @brief Small Basic VS Code 확장 프로그램의 메인 진입점
+ * * 이 확장은 크게 두 단계로 동작한다:
+ * Step 1. [Ctrl+Space] -> 'extension.promptkey': 현재 커서 위치를 파싱하여 '구조적 후보'를 도출 (C++ Addon)
+ * Step 2. [Callback]   -> 'extension.subpromptkey': 도출된 구조를 바탕으로 LLM에게 코드를 요청하고 자동완성 목록에 표시
+ */
+
 import * as vscode from "vscode";
 import { SbCompletionService } from "./sbCompletionService";
 
 // document : Open text document in VSCode
 // position : Current cursor position
-// token : Whether the operation was canceled
-// context : Context in which code completion is provided
-// sendMessage : Text length
-// cursorindex : Cursor position
-// textArea : Entire text
 let CompletionProvider: any;
 let candidatesData: CompletionItem[];
-let linePrefix: string;
-let resulted_prefix: string;
 let currentCompletionService: SbCompletionService | undefined;
 
+// 구조적 후보 데이터 타입 정의
 type CompletionItem = {
-  key: string;
-  value: number;
-  sortText: string;
+  key: string;      // 예: "[ID, =, STR]"
+  value: number;    // 빈도수
+  sortText: string; // 정렬 순위
 };
 
+/**
+ * @brief 확장 프로그램 활성화 함수 (VS Code가 실행될 때 최초 1회 호출)
+ */
 export function activate(context: vscode.ExtensionContext) {
   console.log("Running the VSC Extension");
 
-  // [Helper] 구조적 패턴을 LLM이 이해하기 쉬운 힌트로 변환
-  // 예: "[ID, =, STR]" -> "Identifier = String"
+  // =============================================================================
+  // [Helper Functions] 전처리 및 유틸리티
+  // =============================================================================
+  /**
+   * [Helper 1] 패턴 가독성 변환 (Humanize)
+   * 파서의 원시 토큰(Raw Token)을 LLM이 이해하기 쉬운 자연어 힌트로 변환한다.
+   * 예: "[ID, =, STR]" -> "Identifier = String"
+   */
   function humanizePattern(pattern: string): string {
     return pattern
       .replace(/^\[|\]$/g, "") // 대괄호 제거
@@ -41,19 +49,111 @@ export function activate(context: vscode.ExtensionContext) {
       .trim();
   }
 
-  // [2] LLM을 통해 실제 삽입될 텍스트 생성
+  /**
+   * [Helper 2] 코드 정규화 (Normalization)
+   * 사용자의 입력 스타일(띄어쓰기 등)과 AI의 출력 스타일을 비교하기 위해
+   * 공백을 제거하고 표준 형태로 만든다.
+   */
+  function normalizeCode(text: string): string {
+    return text
+      .replace(/\s*\(\s*/g, "(")
+      .replace(/\s*\)\s*/g, ")")
+      .replace(/\s*=\s*/g, "=")
+      .replace(/\s*>\s*/g, ">")
+      .replace(/\s*<\s*/g, "<")
+      .trim();
+  }
+
+  /**
+   * [Helper 3] LLM 응답 후처리 (Refinement)
+   * AI가 생성한 코드에서 중복된 접두사나 의미 없는 반복을 제거한다.
+   * @param responseText LLM이 생성한 원본 응답
+   * @param normalizedFullContext 비교용 전체 문맥 (정규화됨)
+   * @param normalizedLineContext 비교용 현재 라인 (정규화됨)
+   * @param structuralHint AI에게 주었던 힌트 (단순 반복 체크용)
+   */
+  function refineLLMResponse(
+    responseText: string,
+    normalizedFullContext: string,
+    normalizedLineContext: string,
+    structuralHint: string
+  ): string | null {
+      // 1. 응답 정규화
+      const normalizedResponse = normalizeCode(responseText);
+
+      // 2. 힌트 단순 반복 체크 (AI가 힌트를 그대로 뱉는 경우 필터링)
+      const normalizedHint = structuralHint.replace(/\s/g, "");
+      if (normalizedResponse.replace(/\s/g, "") === normalizedHint) {
+          console.log("-> Skipped: LLM just repeated the hint.");
+          return null;
+      }
+
+      // 3. 접두어 중복 제거 로직
+      let finalText = responseText;
+
+      // case 1: 전체 문맥과 겹치는 경우
+      if (normalizedResponse.includes(normalizedFullContext)) {
+          finalText = normalizedResponse.replace(normalizedFullContext, '');
+      }
+      // case 2: 현재 라인과 겹치는 경우
+      else if (normalizedResponse.includes(normalizedLineContext)) {
+          finalText = normalizedResponse.replace(normalizedLineContext, '');
+      }
+
+      // 4. 최종 포맷팅 (연산자 공백 추가 등)
+      finalText = finalText
+          .replace(/=/g, " = ")
+          .replace(/</g, " < ")
+          .replace(/>/g, " > ")
+          .trim();
+
+      return finalText;
+  }
+
+  /**
+   * [Helper 4] VS Code CompletionItem 생성
+   * 최종 텍스트를 VS Code 자동완성 UI 객체로 포장한다.
+   */
+  function createCompletionItem(
+    finalText: string,
+    cleanKey: string,
+    value: number,
+    sortText: string,
+    lineContext: string
+  ): vscode.CompletionItem {
+      const item = new vscode.CompletionItem(finalText);
+
+      item.kind = vscode.CompletionItemKind.Snippet;
+      item.sortText = sortText;       // 빈도수 기반 정렬 순위 강제
+      item.filterText = lineContext;  // 타이핑 중 사라짐 방지
+
+      item.insertText = new vscode.SnippetString(finalText);
+
+      // 우측 상세 설명창
+      item.documentation = new vscode.MarkdownString()
+        .appendMarkdown(`**Structure:** \`${cleanKey}\`\n\n`)
+        .appendMarkdown(`**Frequency:** ${value}\n\n`)
+        .appendCodeblock(finalText, "smallbasic");
+      
+      return item;
+  }
+
+
+  // =============================================================================
+  // [Step 2] LLM 기반 텍스트 생성 및 자동완성 UI 표시 ("extension.subpromptkey")
+  // =============================================================================
+  // * 실행 시점: 파서가 구조적 후보를 찾은 직후 (Step 1의 Callback)
   const promptCommand = vscode.commands.registerCommand(
     "extension.subpromptkey",
     () => {
-      // 1. 이전에 떠 있던 자동완성 창이나 공급자 제거
+      // 1. 기존 리소스 정리 (이전 자동완성 공급자 해제)
       const disposable = vscode.Disposable.from(CompletionProvider);
       disposable.dispose();
 
-      // 2. 새 공급자 등록
+      // 2. 새로운 자동완성 공급자 등록
       CompletionProvider = vscode.languages.registerCompletionItemProvider(
         ["smallbasic"],
         {
-          // 구조적 후보를 실제 코드로 변환
           async provideCompletionItems(
             document: vscode.TextDocument,
             position: vscode.Position
@@ -62,114 +162,54 @@ export function activate(context: vscode.ExtensionContext) {
             let scroll = 0;
             const maxScroll = 3;  // 상위 3개만 LLM 요청
 
-            // 구조적 후보 순회 시작
-            // candidatesData : 파싱 서버에서 받은 구조적 후보 리스트
+            // --- 구조적 후보 순회 및 LLM 요청 ---
             for (const { key, value, sortText } of candidatesData) {
               if (scroll >= maxScroll) { break;}
 
               // 2-1. 구조적 후보를 LLM 프롬프트 용으로 변환
               const cleanKey = key.replace(/^\[|\]$/g, "").replace(/,/g, " ").replace(/\s+/g, " ").trim();
-              const structuralHint = humanizePattern(key);
-              console.log(`[Processing Candidate ${scroll + 1}] Key: ${cleanKey}, Hint: ${structuralHint}`);
+              const structCandidate = humanizePattern(key);
+              console.log(`[Processing Candidate ${scroll + 1}] Key: ${cleanKey}, Hint: ${structCandidate}`);
 
-              // 2-2. 현재 커서 앞쪽의 전체 텍스트 수집
-              resulted_prefix = document.getText(
-                new vscode.Range(new vscode.Position(0, 0), position)
-              );
-              
-              // 문맥 정규화
-              // 정규식으로 괄호, 등호 주변 공백 제거 (비교를 위해)
-              const normalizedresulted_prefix = resulted_prefix
-                  .replace(/\s*\(\s*/g, "(")
-                  .replace(/\s*\)\s*/g, ")")
-                  .replace(/\s*=\s*/g, "=")
-                  .replace(/\s*>\s*/g, ">")
-                  .replace(/\s*<\s*/g, "<")
-                  .trim();
+              // 2-2. 문맥 수집
+              // 현재 커서 앞쪽의 전체 텍스트 수집
+              const fullContext = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
+              const normalizedFullContext = normalizeCode(fullContext);
 
-              // 현재 라인의 텍스트만 별도로 수집 (비상용 비교군)
-              // The value from the user's cursor position to the space. 
-              // ex) If 'IF a = 10', it becomes 10. If 'IF a = 10 ', it becomes ''.
-              linePrefix = document
-                .lineAt(position)
-                .text.slice(0, position.character);
-              const normalizedlinePrefix = linePrefix
-                .replace(/\s*\(\s*/g, "(")
-                .replace(/\s*\)\s*/g, ")")
-                .replace(/\s*=\s*/g, "=")
-                .replace(/\s*>\s*/g, ">")
-                .replace(/\s*<\s*/g, "<")
-                .trim(); 
+              // 현재 라인의 텍스트만 별도로 수집
+              const lineContext = document.lineAt(position).text.slice(0, position.character);
+              const normalizedLineContext = normalizeCode(lineContext);
 
-              // 2-3. LLM 코드 생성 요청
-              // 구조적 후보(completion.label)와 현재 문맥(resulted_prefix)을 보냄
+              // 2-3. LLM 코드 생성 요청 (Service 호출)
               let responseText = "";
               if (currentCompletionService) {
-                  // ★ 중요: 단순 키워드가 아니라 "구조적 힌트"를 전달함
-                  // SbSnippetGenerator 내부에서 "Complete code using structure: Identifier = String" 형태로 프롬프트 구성됨
-                  responseText = await currentCompletionService.getInsertText(structuralHint, resulted_prefix);
+                  responseText = await currentCompletionService.getTextCandidate(structCandidate, fullContext);
               }
 
-              // 2-4. 응답 정제 및 중복 제거
-              // AI가 생성한 코드에서 사용자가 이미 타이핑한 부분을 제거
+              // 2-4. 응답 정제
+              // : AI가 생성한 코드에서 사용자가 이미 타이핑한 부분을 제거
               if (responseText) {
                 console.log(`[LLM Raw Response] ${responseText}`);
 
-                // AI 응답도 정규화 (비교를 위해)
-                const normalizedResponseText = responseText
-                  .replace(/\s*\(\s*/g, "(")
-                  .replace(/\s*\)\s*/g, ")")
-                  .replace(/\s*=\s*/g, "=")
-                  .replace(/\s*>\s*/g, ">")
-                  .replace(/\s*<\s*/g, "<")
-                  .trim();
-
-                // 구조적 라벨 단순 반복 방지 (LLM이 힌트를 그대로 뱉는 경우)
-                const normalizedHint = structuralHint.replace(/\s/g, "");
-                if (normalizedResponseText.replace(/\s/g, "") === normalizedHint) {
-                     console.log("-> Skipped: LLM just repeated the hint.");
-                     continue; 
-                }
-
-                // 접두어 중복 제거 (Prefix Removal)
-                // 예: 문맥이 "TextWindow." 이고 LLM이 "TextWindow.WriteLine"을 줬다면 "WriteLine"만 남김
-                let finalText = responseText;
-
-                // 전체 문맥과 겹치는 경우
-                if (normalizedResponseText.includes(normalizedresulted_prefix)) {
-                    finalText = normalizedResponseText.replace(normalizedresulted_prefix, '');
-                } 
-                // 현재 라인과 겹치는 경우 (보완책)
-                else if (normalizedResponseText.includes(normalizedlinePrefix)) {
-                    finalText = normalizedResponseText.replace(normalizedlinePrefix, '');
-                }
-
-                // 최종 포맷팅 (공백 예쁘게)
-                finalText = finalText
-                    .replace(/=/g, " = ")
-                    .replace(/</g, " < ")
-                    .replace(/>/g, " > ")
-                    .trim();
-
-                console.log(`[Final Insert Text] ${finalText}`);
-
-
-                // 2-5. 최종적으로 VSCode에 띄울 아이템 생성
-                const completionItem = new vscode.CompletionItem(finalText);
-              
-                completionItem.kind = vscode.CompletionItemKind.Snippet;
-                completionItem.sortText = sortText; // 빈도수 순위 유지
-                completionItem.filterText = linePrefix; // 타이핑해도 사라지지 않게 설정
+                const finalText = refineLLMResponse(
+                  responseText,
+                  normalizedFullContext,
+                  normalizedLineContext,
+                  structCandidate
+                );
                 
-                // 실제 삽입될 텍스트 (SnippetString 사용 가능)
-                completionItem.insertText = new vscode.SnippetString(finalText);
+                if (!finalText) continue;
+                
+                console.log(`[Final Text Candidate] ${finalText}`);
 
-                // 문서화 (우측 설명창): 어떤 구조에서 파생되었는지 설명
-                completionItem.documentation = new vscode.MarkdownString()
-                    .appendMarkdown(`**Structure:** \`${cleanKey}\`\n\n`)
-                    .appendMarkdown(`**Frequency:** ${value}\n\n`)
-                    .appendCodeblock(finalText, "smallbasic");
-
+                // 2-5. UI 아이템 생성 및 추가
+                const completionItem = createCompletionItem(
+                  finalText,
+                  cleanKey,
+                  value,
+                  sortText,
+                  lineContext
+                );
                 completionItems.push(completionItem);
               }
               scroll++;
@@ -177,20 +217,22 @@ export function activate(context: vscode.ExtensionContext) {
             return completionItems;
           },
 
-          // 3. 최종 선택 및 삽입 (Resolution)
-          // 사용자가 추천 리스트에서 엔터를 눌러 항목을 선택했을 때 호출
-          // 현재 커서 앞의 텍스트(prefix)와 선택한 코드(item)를 자연스럽게 결합
+          // 3. 아이템 선택 시 처리 (Resolution)
+          // : 사용자가 추천 리스트에서 엔터를 눌러 항목을 선택했을 때 호출
           async resolveCompletionItem(item: vscode.CompletionItem) {
             return item;
           }
         }
       );
-      // 자동완성 창 띄우기
+      // // VS Code에게 자동완성 창 띄우기 지시
       vscode.commands.executeCommand("editor.action.triggerSuggest");
     }
   );
 
-  // [1] Ctrl + C 진입점
+  // =============================================================================
+  // [Step 1] 진입점: 파싱 요청 및 워크플로우 시작 ("extension.promptkey")
+  // =============================================================================
+  // * 실행 시점: 사용자가 단축키(Ctrl+Space)를 눌렀을 때
   const PromptKeyProvider = vscode.commands.registerCommand(
       "extension.promptkey",
       () => {
@@ -199,33 +241,30 @@ export function activate(context: vscode.ExtensionContext) {
           if (activeEditor) {
               const document = activeEditor.document;
 
-              // 1. 커서 위치 및 텍스트 정보 수집
+              // 1. 현재 에디터 상태 수집
               const cursorPosition = activeEditor.selection.active;
-              
-              // Tree-sitter에 필요한 핵심 정보 3가지
               const fullText = document.getText(); // 전체 소스 코드
-              const row = cursorPosition.line + 1;     // 커서 행 (0-based)
-              const col = cursorPosition.character + 1;// 커서 열 (0-based)
+              const row = cursorPosition.line + 1;      // 커서 행
+              const col = cursorPosition.character + 1; // 커서 열
 
-              // 2. Service 생성
+              // 2. Service 인스턴스 생성 (파서 및 LLM 클라이언트 초기화)
               const completionService = new SbCompletionService(
                 context.extensionPath,
                 fullText, 
                 row, 
                 col
               );
-
               currentCompletionService = completionService;
 
-              // 3. 결과를 받을 준비(Callback)
+              // 3. 콜백 설정: 파싱이 완료되면 실행될 로직 정의
               completionService.onDataReceived((data: any) => {
-                  candidatesData = data;
+                  candidatesData = data;  // 전역 변수에 구조 후보 데이터 저장
                   
-                  // 3. LLM 커맨드 실행
+                  // 5. Step 2 (자동완성 로직 트리거) 실행
                   vscode.commands.executeCommand("extension.subpromptkey"); 
               });
 
-              // 4. 파스 상태 및 후보 요청
+              // 4. 파싱 시작 (구조적 후보 도출 요청)
               completionService.getStructCandidates();
 
           } else {
@@ -233,12 +272,12 @@ export function activate(context: vscode.ExtensionContext) {
           }
       }
   );  
-
+  // 확장 프로그램에 명령어 등록
   context.subscriptions.push(
     promptCommand,
     PromptKeyProvider
   );
 }
 
-// This method is called when your extension is deactivated
+// 확장 비활성화 시 호출
 export function deactivate() {}

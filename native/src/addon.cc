@@ -1,27 +1,45 @@
+/**
+ * @file addon.cc
+ * @brief SmallBasic 파서와 상호작용하기 위한 Node.js Native Addon (N-API)
+ * * VS Code Extension(JS/TS)에서 소스 코드를 받아 Tree-sitter의 내부 파싱 상태(State ID)를 반환한다.
+ * 이 State ID는 구조적 자동완성 후보를 조회하는 키로 사용된다.
+ */
+
 #include <napi.h>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <algorithm>
 
-// tree_sitter/api.h를 포함합니다. (binding.gyp의 include_dirs 덕분에 경로 인식)
+// binding.gyp의 include_dirs 설정을 통해 참조되는 Tree-sitter API 헤더
 #include "tree_sitter/api.h"
 
-// ================= [외부 함수 선언] =================
+// =============================================================================
+// [External Declarations]
+// C 언어로 작성된 Tree-sitter 파서 및 내부 함수들을 링크하기 위한 선언
+// =============================================================================
 
-// 1. SmallBasic 파서 (정적 링크)
+// SmallBasic 언어 정의 함수 (generated parser에서 제공)
 extern "C" TSLanguage *tree_sitter_smallbasic();
 
-// 2. 사용자 커스텀 엔진 함수 (api.h에 선언이 없다면 extern 필요)
-//    lib/src/parser.c 내부에 구현된 그 함수입니다.
+// 커스텀 파서 로직 함수 (lib/src/parser.c에 구현됨)
+// 중단점에서의 파싱 상태(State Id) 찾기 위해 사용
 extern "C" {
     TSStateId TsParserFindClosestRecoverState(TSParser *self, uint32_t StopRow, uint32_t StopColumn, TSLoggedAction *OutLog);
 }
 
-
-// ================= [헬퍼 함수: 위치 -> 바이트 오프셋] =================
-// TreeSitterCutFile.cpp 에서 가져옴
-// (VS Code의 행/열 좌표를 소스코드 문자열의 바이트 인덱스로 변환)
+// =============================================================================
+// [Helper Function] Offset Calculation
+// =============================================================================
+/**
+ * @brief VS Code의 (행, 열) 좌표를 UTF-8 바이트 오프셋으로 변환한다.
+ * * Tree-sitter는 바이트 단위 오프셋을 사용하지만, VS Code는 문자 단위(Char) 좌표를 사용하므로
+ * 한글 등 멀티바이트 문자가 포함된 경우 변환이 필요하다.
+ * * @param text 소스 코드 전체 문자열
+ * @param target_row 목표 행 (0-based)
+ * @param target_col 목표 열 (0-based)
+ * @return size_t 변환된 바이트 오프셋
+ */
 size_t FindByteOffsetForPosition(const std::string& text, uint32_t target_row, uint32_t target_col) {
     size_t current_offset = 0;
     uint32_t current_row = 0; 
@@ -61,38 +79,45 @@ size_t FindByteOffsetForPosition(const std::string& text, uint32_t target_row, u
 }
 
 
-// ================= [메인 함수] =================
-// JS 호출: getPhysicalState(sourceCode, row, col)
+// =============================================================================
+// [Main API] N-API Export Function
+// =============================================================================
+/**
+ * @brief JS에서 호출 가능한 파싱 상태 조회 함수
+ * * Signature: getPhysicalState(sourceCode: string, row: number, col: number) -> number
+ * * @param info[0] sourceCode (string): 전체 소스 코드
+ * @param info[1] row (number): 커서 행 (1-based from VS Code extension)
+ * @param info[2] col (number): 커서 열 (1-based from VS Code extension)
+ * @return number 파서의 현재 State ID
+ */
 Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
-    // 1. 인자 확인 (3개만 있으면 됨)
+    // 1. 인자 유효성 검사
     if (info.Length() < 3) {
         Napi::TypeError::New(env, "Args: sourceCode, row, col").ThrowAsJavaScriptException();
         return env.Null();
     }
 
+    // 2. 인자 추출
     std::string source_code = info[0].As<Napi::String>().Utf8Value();
     uint32_t stop_row_in = info[1].As<Napi::Number>().Uint32Value();
     uint32_t stop_col_in = info[2].As<Napi::Number>().Uint32Value();
 
-    // 2. 언어 가져오기 (이미 정적 링크되어 있으므로 바로 호출)
-    // ★ 수정 포인트: 다른 언어 확장이면 여기 함수명만 바꾸면 됩니다.
+    // 3. Tree-sitter 파서 초기화
     TSLanguage *language = tree_sitter_smallbasic();
-
-    // 3. 파서 설정
     TSParser *parser = ts_parser_new();
     ts_parser_set_language(parser, language);
 
-    // 4. 커스텀 설정
+    // 4. 좌표 보정 및 파서 설정
     uint32_t target_row = stop_row_in > 0 ? stop_row_in - 1 : 0;
     uint32_t target_col = stop_col_in > 0 ? stop_col_in - 1 : 0;
 
     TSPoint stop_point = {stop_row_in, stop_col_in};
     ts_parser_set_stop_position(parser, stop_point);
-    ts_parser_set_find_state_mode(parser, false); 
+    ts_parser_set_find_state_mode(parser, false);   // 컨버전 모드
 
-    // 5. 파싱
+    // 5. 바이트 오프셋 계산 및 파싱 실행
     size_t effective_length = FindByteOffsetForPosition(source_code, target_row, target_col);
     if (effective_length > source_code.length()) effective_length = source_code.length();
 
@@ -100,18 +125,24 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
         parser, NULL, source_code.c_str(), static_cast<uint32_t>(effective_length)
     );
 
-    // 6. 결과 추출
+    // 6. 중단점의 파서 상태(State ID) 추출
+    // TsParserFindClosestRecoverState는 커스텀 구현된 함수로, 에러 복구 상태를 포함한 가장 가까운 상태를 반환함
     TSLoggedAction temp_log; 
     TSStateId found_state = TsParserFindClosestRecoverState(parser, stop_row_in, stop_col_in, &temp_log);
 
-    // 7. 정리
+    // 7. 메모리 해제
     if (tree) ts_tree_delete(tree);
     ts_parser_delete(parser);
 
     return Napi::Number::New(env, found_state);
 }
 
+// =============================================================================
+// [Module Initialization]
+// =============================================================================
+
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
+    // JS에서 'getPhysicalState'라는 이름으로 함수를 노출
     exports.Set(Napi::String::New(env, "getPhysicalState"), Napi::Function::New(env, GetPhysicalState));
     return exports;
 }
