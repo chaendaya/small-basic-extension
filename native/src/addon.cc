@@ -36,8 +36,8 @@ extern "C" {
  * * Tree-sitter는 바이트 단위 오프셋을 사용하지만, VS Code는 문자 단위(Char) 좌표를 사용하므로
  * 한글 등 멀티바이트 문자가 포함된 경우 변환이 필요하다.
  * * @param text 소스 코드 전체 문자열
- * @param target_row 목표 행 (0-based)
- * @param target_col 목표 열 (0-based)
+ * @param target_row 목표 행
+ * @param target_col 목표 열
  * @return size_t 변환된 바이트 오프셋
  */
 size_t FindByteOffsetForPosition(const std::string& text, uint32_t target_row, uint32_t target_col) {

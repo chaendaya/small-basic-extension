@@ -138,6 +138,90 @@ export function activate(context: vscode.ExtensionContext) {
       return item;
   }
 
+  // =============================================================================
+  // [Step 1.5] 구조 후보만 VS Code 자동완성으로 띄우기 ("extension.substructkey")
+  // =============================================================================
+  // * 실행 시점: 파서가 구조적 후보를 찾은 직후 (Step 1의 Callback)
+  // * 동작: 상위 10개 구조 후보를 자동완성 목록에 표시 (LLM 호출 없음)
+  const structCommand = vscode.commands.registerCommand(
+    "extension.substructkey",
+    () => {
+      // 1) 기존 provider 정리 (없을 수도 있으니 가드)
+      if (CompletionProvider) {
+        try {
+          const disposable = vscode.Disposable.from(CompletionProvider);
+          disposable.dispose();
+        } catch (e) {
+          console.log("[Info] No previous CompletionProvider to dispose.", e);
+        }
+      }
+
+      // 2) 새로운 CompletionItemProvider 등록
+      CompletionProvider = vscode.languages.registerCompletionItemProvider(
+        ["smallbasic"],
+        {
+          async provideCompletionItems(
+            document: vscode.TextDocument,
+            position: vscode.Position
+          ): Promise<vscode.CompletionItem[]> {
+            const completionItems: vscode.CompletionItem[] = [];
+
+            // candidatesData가 아직 없으면 빈 배열
+            if (!candidatesData || candidatesData.length === 0) {
+              return completionItems;
+            }
+
+            // 상위 3개만
+            const maxScroll = 10;
+            const topCandidates = candidatesData.slice(0, maxScroll);
+
+            // 현재 라인 컨텍스트 (filterText로 타이핑 중 사라짐 방지용)
+            const lineContext = document.lineAt(position).text.slice(0, position.character);
+
+            for (const { key, value, sortText } of topCandidates) {
+              const cleanKey = key
+                .replace(/^\[|\]$/g, "")
+                .replace(/,/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+
+              const structCandidate = humanizePattern(key); // 예: "Identifier = String"
+
+              // 라벨은 사람이 읽기 쉬운 형태로
+              const item = new vscode.CompletionItem(structCandidate);
+              item.kind = vscode.CompletionItemKind.Keyword;
+
+              // 빈도 기반 정렬 유지
+              item.sortText = sortText;
+
+              // 타이핑 중 목록에서 사라지지 않게
+              item.filterText = lineContext;
+
+              // 선택해도 실제 코드 삽입은 하지 않게(“구조 후보 표시” 목적)
+              item.insertText = new vscode.SnippetString("");
+
+              // 우측 설명
+              item.documentation = new vscode.MarkdownString()
+                .appendMarkdown(`**Structure (raw):** \`${cleanKey}\`\n\n`)
+                .appendMarkdown(`**Frequency:** ${value}\n\n`)
+                .appendMarkdown(`**Hint:** ${structCandidate}\n`);
+
+              completionItems.push(item);
+            }
+
+            return completionItems;
+          },
+
+          async resolveCompletionItem(item: vscode.CompletionItem) {
+            return item;
+          },
+        }
+      );
+
+      // 3) 자동완성 창 띄우기
+      vscode.commands.executeCommand("editor.action.triggerSuggest");
+    }
+  );
 
   // =============================================================================
   // [Step 2] LLM 기반 텍스트 생성 및 자동완성 UI 표시 ("extension.subpromptkey")
@@ -261,7 +345,7 @@ export function activate(context: vscode.ExtensionContext) {
                   candidatesData = data;  // 전역 변수에 구조 후보 데이터 저장
                   
                   // 5. Step 2 (자동완성 로직 트리거) 실행
-                  vscode.commands.executeCommand("extension.subpromptkey"); 
+                  vscode.commands.executeCommand("extension.substructkey"); 
               });
 
               // 4. 파싱 시작 (구조적 후보 도출 요청)
@@ -275,6 +359,7 @@ export function activate(context: vscode.ExtensionContext) {
   // 확장 프로그램에 명령어 등록
   context.subscriptions.push(
     promptCommand,
+    structCommand,
     PromptKeyProvider
   );
 }

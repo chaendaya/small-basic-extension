@@ -103,7 +103,7 @@ export class SbCompletionService {
      */
     private loadCandidateDB(extensionPath: string) {
       try {
-        const jsonPath = path.join(extensionPath, 'src', 'smallbasic_candidates_small.json');
+        const jsonPath = path.join(extensionPath, 'src', 'smallbasic_candidates.json');
         console.log(`[Info] Loading Candidate DB from: ${jsonPath}`);
         
         if (fs.existsSync(jsonPath)) {
