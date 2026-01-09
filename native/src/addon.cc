@@ -25,7 +25,10 @@ extern "C" TSLanguage *tree_sitter_smallbasic();
 // 커스텀 파서 로직 함수 (lib/src/parser.c에 구현됨)
 // 중단점에서의 파싱 상태(State Id) 찾기 위해 사용
 extern "C" {
-    TSStateId TsParserFindClosestRecoverState(TSParser *self, uint32_t StopRow, uint32_t StopColumn, TSLoggedAction *OutLog);
+    TSStateId TsParserFindClosestState(TSParser *self, uint32_t StopRow, uint32_t StopColumn, TSLoggedAction *OutLog);
+}
+extern "C" {
+    TSStatePath TsParserFindStatePath(TSParser *self, uint32_t StopRow, uint32_t StopColumn);
 }
 
 // =============================================================================
@@ -61,10 +64,14 @@ size_t FindByteOffsetForPosition(const std::string& text, uint32_t target_row, u
             current_row++;
             current_col = 0;
             current_offset += 2;
-        } else if (current_char == '\t') {
-            current_col = ((current_col / tab_width) + 1) * tab_width;
-            current_offset++;
-        } else {
+        }
+        // 제거됨. VS Code의 Position 객체는 Tab을 1개의 character로 취급하여 좌표를 보냄
+        // else if (current_char == '\t') {
+        //     current_col = ((current_col / tab_width) + 1) * tab_width;
+        //     current_offset++;
+        // } 
+        
+        else {
              current_col++;
              current_offset++;
              // UTF-8 멀티바이트 처리
@@ -113,7 +120,7 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
     uint32_t target_row = stop_row_in > 0 ? stop_row_in - 1 : 0;
     uint32_t target_col = stop_col_in > 0 ? stop_col_in - 1 : 0;
 
-    TSPoint stop_point = {stop_row_in, stop_col_in};
+    TSPoint stop_point = {target_row, target_col};
     ts_parser_set_stop_position(parser, stop_point);
     ts_parser_set_find_state_mode(parser, false);   // 컨버전 모드
 
@@ -127,14 +134,22 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
 
     // 6. 중단점의 파서 상태(State ID) 추출
     // TsParserFindClosestRecoverState는 커스텀 구현된 함수로, 에러 복구 상태를 포함한 가장 가까운 상태를 반환함
-    TSLoggedAction temp_log; 
-    TSStateId found_state = TsParserFindClosestRecoverState(parser, stop_row_in, stop_col_in, &temp_log);
+    // TSLoggedAction temp_log; 
+    // TSStateId found_state = TsParserFindClosestState(parser, stop_row_in, stop_col_in, &temp_log);
+    TSStatePath path = TsParserFindStatePath(parser, target_row, target_col);
+
+    Napi::Array js_array = Napi::Array::New(env, path.count);
+    for (uint32_t i = 0; i < path.count; i++) {
+        // 구조체 내부의 states를 저장
+        js_array.Set(i, path.states[i]);
+    }
 
     // 7. 메모리 해제
     if (tree) ts_tree_delete(tree);
     ts_parser_delete(parser);
 
-    return Napi::Number::New(env, found_state);
+    // return Napi::Number::New(env, found_state);
+    return js_array;
 }
 
 // =============================================================================

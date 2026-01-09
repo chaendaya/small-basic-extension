@@ -39,14 +39,12 @@ export class SbCompletionService {
      * @brief 서비스 초기화 및 리소스 로딩
      * @param extensionPath 확장 프로그램의 루트 경로 (리소스 파일 접근용)
      * @param fullText 에디터의 전체 소스 코드
-     * @param row 커서 행
-     * @param col 커서 열
+     * @param offset 커서의 절대 위치 (Byte Offset)
      */
     constructor(extensionPath: string, fullText: string, row: number, col: number) {
         this.fullText = fullText;
         this.row = row;
         this.col = col;
-
         // ---------------------------------------------------------
         // 1. OpenAI API Key 로딩 (secrets.json)
         // ---------------------------------------------------------
@@ -103,7 +101,7 @@ export class SbCompletionService {
      */
     private loadCandidateDB(extensionPath: string) {
       try {
-        const jsonPath = path.join(extensionPath, 'src', 'smallbasic_candidates.json');
+        const jsonPath = path.join(extensionPath, 'src', 'SB_DB_json', '03_Variables.json');
         console.log(`[Info] Loading Candidate DB from: ${jsonPath}`);
         
         if (fs.existsSync(jsonPath)) {
@@ -119,40 +117,114 @@ export class SbCompletionService {
       }
     }
 
+    // /**
+    //  * @brief 파서 상태(State ID)에 매핑되는 구조적 후보들을 조회한다.
+    //  * @param states 파서가 반환한 상태 ID
+    //  * @returns 정렬된 후보 목록
+    //  */
+    // public lookupDB(states: number[]) {
+    //   const result: any[] = [];
+    //   const db = SbCompletionService.candidateDB;
+    //   if (!db) {
+    //     console.warn("[Warning] DB is not loaded yet.");
+    //     return result;
+    //   }
+
+    //   for (const state of states) {
+    //     const stateKey = state.toString();
+
+    //     if (db[stateKey]) {
+    //       const candidates = db[stateKey];
+
+    //       // 해당 State의 후보들을 결과 배열에 추가
+    //       candidates.forEach((item, index) => {
+    //           result.push({
+    //                 key: item.key,      // 예: "[ID, =, Expr]"
+    //                 value: item.value,  // 예: 2119
+    //                 // VS Code UI에서 빈도수 순서를 유지하기 위해 sortText 강제 설정
+    //                 // "001", "002" ... 순으로 생성됨
+    //                 sortText: (result.length + 1).toString().padStart(3, "0") 
+    //           });
+    //       });
+    //     }
+    //   }
+    //   console.log("result", JSON.stringify(result));
+    //   return result;
+    // }
     /**
-     * @brief 파서 상태(State ID)에 매핑되는 구조적 후보들을 조회한다.
-     * @param states 파서가 반환한 상태 ID
+     * @brief 파서 상태(State ID)들의 집합에 매핑되는 구조적 후보들을 조회하고 합침
+     * - 여러 State에서 공통적으로 등장하는 후보는 빈도수(Value)를 합산
+     * - 최종적으로 빈도수가 높은 순서대로 정렬하여 반환
+     * * @param states 파서가 반환한 상태 ID 배열 (예: [51, 65, 240])
      * @returns 정렬된 후보 목록
      */
     public lookupDB(states: number[]) {
-      const result: any[] = [];
-      const db = SbCompletionService.candidateDB;
-      if (!db) {
-        console.warn("[Warning] DB is not loaded yet.");
-        return result;
-      }
-
-      for (const state of states) {
-        const stateKey = state.toString();
-
-        if (db[stateKey]) {
-          const candidates = db[stateKey];
-
-          // 해당 State의 후보들을 결과 배열에 추가
-          candidates.forEach((item, index) => {
-              result.push({
-                    key: item.key,      // 예: "[ID, =, Expr]"
-                    value: item.value,  // 예: 2119
-                    // VS Code UI에서 빈도수 순서를 유지하기 위해 sortText 강제 설정
-                    // "001", "002" ... 순으로 생성됨
-                    sortText: (result.length + 1).toString().padStart(3, "0") 
-              });
-          });
+        const db = SbCompletionService.candidateDB;
+        if (!db) {
+            console.warn("[Warning] DB is not loaded yet.");
+            return [];
         }
-      }
-      console.log("result", JSON.stringify(result));
-      return result;
+
+        // 1. 중복 제거 및 빈도수 합산을 위한 Map
+        // Key: 후보 문자열 (예: "[ID, =, Expr]")
+        // Value: 후보 객체 (빈도수가 누적됨)
+        const mergedMap = new Map<string, any>();
+
+        for (const state of states) {
+            const stateKey = state.toString();
+
+            if (db[stateKey]) {
+                const candidates = db[stateKey];
+
+                // 로그
+                const patterns = candidates.map(c => c.key);
+                console.log(`State ${state}: Found ${candidates.length} candidates -> ${JSON.stringify(patterns)}`);
+
+                candidates.forEach((item) => {
+                    if (mergedMap.has(item.key)) {
+                        // [Case A] 이미 존재하는 후보 -> 빈도수 합산 (가중치 증가)
+                        // 여러 경로에서 추천된 후보일수록 사용자가 의도했을 확률이 높음
+                        const existing = mergedMap.get(item.key);
+                        existing.value += item.value;
+                    } else {
+                        // [Case B] 새로운 후보 -> 맵에 등록
+                        // 원본 DB 훼손 방지를 위해 얕은 복사({...item}) 사용
+                        mergedMap.set(item.key, { ...item });
+                    }
+                });
+            }
+            else {
+                // 로그
+                console.log(`No state ${state} in DB`);
+            }
+        }
+
+        // 2. Map을 배열로 변환
+        const result = Array.from(mergedMap.values());
+
+        // 3. 빈도수(Value) 내림차순 정렬
+        result.sort((a, b) => b.value - a.value);
+
+        // 4. sortText 재할당
+        // VS Code는 sortText 문자열 순서대로 UI에 표시하므로, 
+        // 정렬이 끝난 후 최종 순서대로 "001", "002"를 매겨야 함.
+        const finalResult = result.map((item, index) => {
+            return {
+                key: item.key,
+                value: item.value,
+                sortText: (index + 1).toString().padStart(3, "0") // "001", "002"...
+            };
+        });
+
+        if (finalResult.length > 0) {
+            console.log("[lookupDB] Final Merged Result");
+            console.log(JSON.stringify(finalResult, null, 2)); 
+        } else {
+            console.log("[lookupDB] Final Result: No candidates found.");
+        }
+        return finalResult;
     }
+
 
     // =========================================================================
     // [Core Logic 1] Structural Candidates
@@ -165,39 +237,66 @@ export class SbCompletionService {
         this.dataReceivedCallback = callback;
     }
 
+    // /**
+    //  * @brief [Step 1] 파서 상태 분석 및 구조적 후보 도출
+    //  * C++ Addon을 호출하여 현재 커서 위치의 파싱 상태를 얻고,
+    //  * DB에서 후보를 조회하여 콜백으로 전달한다.
+    //  */
+    // public getStructCandidates() {
+    //     try {
+    //         console.log(`Requesting Parse: Row ${this.row}, Col ${this.col}`);
+
+    //         // 1. C++ Addon 호출 (동기 방식이라 즉시 결과가 나옴)
+    //         // Tree-sitter 파싱을 수행하고 현재 커서 위치의 State ID를 반환받음
+    //         const stateNumber = this.parserAddon.getPhysicalState(this.fullText, this.row, this.col);
+    //         console.log("Parsed State ID:", stateNumber);
+
+    //         // 2. DB 조회 (State ID -> Structural Candidates)
+    //         let currentState = typeof stateNumber === 'number' ? [stateNumber] : []; 
+    //         const structCandidates = this.lookupDB(currentState);
+
+    //         // 3. 후보 정렬 (빈도수 내림차순)
+    //         structCandidates.sort((a: any, b: any) => b.value - a.value);
+
+    //         // 4. 결과 전달 (extension.ts로 콜백)
+    //         if (this.dataReceivedCallback) {
+    //             let completionItems: any[] = [];
+                
+    //             for (const item of structCandidates) {
+    //                 completionItems.push({
+    //                     key: item.key,           // 예: "[ID, =, STR]"
+    //                     value: item.value,       // 빈도수
+    //                     sortText: item.sortText, // 정렬 순서
+    //                 });
+    //             }
+    //             this.dataReceivedCallback(completionItems);
+    //         }
+    //     } catch (e) {
+    //         console.error("Parser Error:", e);
+    //     }
+    // }
+
     /**
      * @brief [Step 1] 파서 상태 분석 및 구조적 후보 도출
-     * C++ Addon을 호출하여 현재 커서 위치의 파싱 상태를 얻고,
-     * DB에서 후보를 조회하여 콜백으로 전달한다.
+     * 1. C++ Addon을 통해 파싱 경로(State Path)를 가져옵니다.
+     * 2. 경로상의 모든 State에 대해 DB를 조회합니다.
+     * 3. 결과들을 합집합(Union) 처리하고, 중복된 후보는 빈도수를 합산합니다.
      */
     public getStructCandidates() {
         try {
             console.log(`Requesting Parse: Row ${this.row}, Col ${this.col}`);
 
-            // 1. C++ Addon 호출 (동기 방식이라 즉시 결과가 나옴)
-            // Tree-sitter 파싱을 수행하고 현재 커서 위치의 State ID를 반환받음
-            const stateNumber = this.parserAddon.getPhysicalState(this.fullText, this.row, this.col);
-            console.log("Parsed State ID:", stateNumber);
+            // 1. C++ Addon 호출 (이제 number[] 배열을 반환합니다)
+            // 예: [51, 29, 65, 240]
+            const states = this.parserAddon.getPhysicalState(this.fullText, this.row, this.col);
+            console.log("Parsed State Path:", JSON.stringify(states));
 
-            // 2. DB 조회 (State ID -> Structural Candidates)
-            let currentState = typeof stateNumber === 'number' ? [stateNumber] : []; 
-            const structCandidates = this.lookupDB(currentState);
+            // 2. DB 조회 (이제 lookupDB가 알아서 합치고 정렬해서 줍니다)
+            const structCandidates = this.lookupDB(states);
 
-            // 3. 후보 정렬 (빈도수 내림차순)
-            structCandidates.sort((a: any, b: any) => b.value - a.value);
-
-            // 4. 결과 전달 (extension.ts로 콜백)
+            // 3. 결과 전달 (extension.ts로 콜백)
             if (this.dataReceivedCallback) {
-                let completionItems: any[] = [];
-                
-                for (const item of structCandidates) {
-                    completionItems.push({
-                        key: item.key,           // 예: "[ID, =, STR]"
-                        value: item.value,       // 빈도수
-                        sortText: item.sortText, // 정렬 순서
-                    });
-                }
-                this.dataReceivedCallback(completionItems);
+                this.dataReceivedCallback(structCandidates);
             }
         } catch (e) {
             console.error("Parser Error:", e);

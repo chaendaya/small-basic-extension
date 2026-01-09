@@ -329,14 +329,21 @@ export function activate(context: vscode.ExtensionContext) {
               const cursorPosition = activeEditor.selection.active;
               const fullText = document.getText(); // 전체 소스 코드
               const row = cursorPosition.line + 1;      // 커서 행
-              const col = cursorPosition.character + 1; // 커서 열
+
+              // character가 아닌, 'UTF-8 바이트 길이'를 계산
+              // 1. 현재 라인의 텍스트 전체를 가져옴
+              const lineText = document.lineAt(cursorPosition.line).text;
+              // 2. 문장의 시작부터 커서 위치까지 자름
+              const linePrefix = lineText.substring(0, cursorPosition.character);
+              // 3. 해당 문자열의 바이트 길이를 계산 (한글=3byte, 영문=1byte 등 처리됨)
+              const byteCol = Buffer.byteLength(linePrefix, 'utf8') + 1; // 1-based로 변환
 
               // 2. Service 인스턴스 생성 (파서 및 LLM 클라이언트 초기화)
               const completionService = new SbCompletionService(
                 context.extensionPath,
                 fullText, 
-                row, 
-                col
+                row,
+                byteCol
               );
               currentCompletionService = completionService;
 
