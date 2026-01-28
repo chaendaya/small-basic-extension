@@ -25,7 +25,10 @@ extern "C" TSLanguage *tree_sitter_smallbasic();
 // 커스텀 파서 로직 함수 (lib/src/parser.c에 구현됨)
 // 중단점에서의 파싱 상태(State Id) 찾기 위해 사용
 extern "C" {
-    TSStatePath TsParserConversion(TSParser *Self, uint32_t TargetRow, uint32_t TargetCol);
+    TSStateId TsParserFindClosestState(TSParser *self, uint32_t StopRow, uint32_t StopColumn, TSLoggedAction *OutLog);
+}
+extern "C" {
+    TSStatePath TsParserFindStatePath(TSParser *self, uint32_t StopRow, uint32_t StopColumn);
 }
 
 // =============================================================================
@@ -133,7 +136,7 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
     // TsParserFindClosestRecoverState는 커스텀 구현된 함수로, 에러 복구 상태를 포함한 가장 가까운 상태를 반환함
     // TSLoggedAction temp_log; 
     // TSStateId found_state = TsParserFindClosestState(parser, stop_row_in, stop_col_in, &temp_log);
-    TSStatePath path = TsParserConversion(parser, target_row, target_col);
+    TSStatePath path = TsParserFindStatePath(parser, target_row, target_col);
 
     Napi::Array js_array = Napi::Array::New(env, path.count);
     for (uint32_t i = 0; i < path.count; i++) {
