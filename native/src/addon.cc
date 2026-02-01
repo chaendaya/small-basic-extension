@@ -23,15 +23,15 @@
 extern "C" TSLanguage *tree_sitter_smallbasic();
 
 // 커스텀 파서 로직 함수 (lib/src/parser.c에 구현됨)
-// 중단점에서의 파싱 상태(State Id) 찾기 위해 사용
-// extern "C" {
-//     TSStateId TsParserFindClosestState(TSParser *self, uint32_t StopRow, uint32_t StopColumn, TSLoggedAction *OutLog);
-// }
 extern "C" {
-    TSStatePath TsParserFindStatePath(TSParser *self, uint32_t StopRow, uint32_t StopColumn);
-}
-extern "C" {
-    TSStatePath TsParserConversion(TSParser *self, uint32_t StopRow, uint32_t StopColumn);
+    // 1. 컨버전 로직 실행
+    TSStatePath ts_parser_run_conversion(TSParser *self);
+
+    // 2. 컨버전 결과 출력 (파일 or 화면)
+    void ts_parser_write_conversion_result(TSParser *self, TSStatePath *path, FILE *fp);
+
+    // 3. 로그 덤프
+    void ts_parser_write_logged_actions(TSParser *self, const char *filename);
 }
 
 // =============================================================================
@@ -93,14 +93,14 @@ size_t FindByteOffsetForPosition(const std::string& text, uint32_t target_row, u
 // [Main API] N-API Export Function
 // =============================================================================
 /**
- * @brief JS에서 호출 가능한 파싱 상태 조회 함수
+ * @brief JS에서 호출 가능한 파싱 및 컨버전 실행 함수
  * * Signature: getPhysicalState(sourceCode: string, row: number, col: number) -> number
  * * @param info[0] sourceCode (string): 전체 소스 코드
  * @param info[1] row (number): 커서 행 (1-based from VS Code extension)
  * @param info[2] col (number): 커서 열 (1-based from VS Code extension)
- * @return number 파서의 현재 State ID
+ * @return array 컨버전 결과
  */
-Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
+Napi::Value GetConversionResult(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
     // 1. 인자 유효성 검사
@@ -124,8 +124,7 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
     uint32_t target_col = stop_col_in > 0 ? stop_col_in - 1 : 0;
 
     TSPoint stop_point = {target_row, target_col};
-    ts_parser_set_stop_position(parser, stop_point);
-    ts_parser_set_find_state_mode(parser, false);   // 컨버전 모드
+    ts_parser_set_cursor_position(parser, stop_point);
 
     // 5. 바이트 오프셋 계산 및 파싱 실행
     size_t effective_length = FindByteOffsetForPosition(source_code, target_row, target_col);
@@ -135,13 +134,13 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
         parser, NULL, source_code.c_str(), static_cast<uint32_t>(effective_length)
     );
 
-    // 6. 중단점의 파서 상태(State ID) 추출
-    // TsParserFindClosestRecoverState는 커스텀 구현된 함수로, 에러 복구 상태를 포함한 가장 가까운 상태를 반환함
-    // TSLoggedAction temp_log; 
-    // TSStateId found_state = TsParserFindClosestState(parser, stop_row_in, stop_col_in, &temp_log);
-    // TSStatePath path = TsParserFindStatePath(parser, target_row, target_col);
-    TSStatePath path = TsParserConversion(parser, target_row, target_col);
+    // [로그 덤프] logged_actions.txt 저장
+    ts_parser_write_logged_actions(parser, "logged_actions.txt");
 
+    // 6. 컨버전 로직 적용
+    TSStatePath path = ts_parser_run_conversion(parser);
+    ts_parser_write_conversion_result(parser, &path, stdout);
+    
     Napi::Array js_array = Napi::Array::New(env, path.count);
     for (uint32_t i = 0; i < path.count; i++) {
         // 구조체 내부의 states를 저장
@@ -152,7 +151,6 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
     if (tree) ts_tree_delete(tree);
     ts_parser_delete(parser);
 
-    // return Napi::Number::New(env, found_state);
     return js_array;
 }
 
@@ -161,8 +159,8 @@ Napi::Value GetPhysicalState(const Napi::CallbackInfo& info) {
 // =============================================================================
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {
-    // JS에서 'getPhysicalState'라는 이름으로 함수를 노출
-    exports.Set(Napi::String::New(env, "getPhysicalState"), Napi::Function::New(env, GetPhysicalState));
+    // JS에서 'getConversionResult'라는 이름으로 함수를 노출
+    exports.Set(Napi::String::New(env, "getConversionResult"), Napi::Function::New(env, GetConversionResult));
     return exports;
 }
 
