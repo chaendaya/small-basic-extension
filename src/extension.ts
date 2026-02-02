@@ -172,7 +172,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             // 상위 3개만
-            const maxScroll = 10;
+            const maxScroll = 20;
             const topCandidates = candidatesData.slice(0, maxScroll);
 
             // 현재 라인 컨텍스트 (filterText로 타이핑 중 사라짐 방지용)
