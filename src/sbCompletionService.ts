@@ -11,6 +11,7 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import OpenAI from "openai";
 import * as path from "path";
+import { TokenMapper } from "./mapLoader";
 import { SYSTEM_ROLE, generateCompletionPrompt } from "./prompts";
 
 // 구조적 후보 데이터 인터페이스 (DB 저장 형태)
@@ -33,6 +34,7 @@ export class SbCompletionService {
     
     // 모든 인스턴스가 공유하는 정적 DB
     private static candidateDB: CandidateDB | null = null;
+    private static tokenMapper: TokenMapper | null = null;
     private openai: OpenAI | undefined;
 
     /** 생성자
@@ -71,6 +73,21 @@ export class SbCompletionService {
             this.openai = new OpenAI({
                 apiKey: apiKey, 
             });
+        }
+
+        // token mapper 로딩
+        if (!SbCompletionService.tokenMapper) {
+            const mappingPath = path.join(__dirname, "..", "token_mapping.json");
+            if (fs.existsSync(mappingPath)) {
+                try {
+                    SbCompletionService.tokenMapper = new TokenMapper(mappingPath);
+                    console.log("[Info] TokenMapper loaded successfully.");
+                } catch (e) {
+                    console.error("[Error] Failed to parse token_mapping.json", e);
+                }
+            } else {
+                console.warn(`[Warning] token_mapping.json not found at: ${mappingPath}`);
+            }
         }
 
         // ---------------------------------------------------------
@@ -126,6 +143,8 @@ export class SbCompletionService {
      */
     public lookupDB(states: number[]) {
         const db = SbCompletionService.candidateDB;
+        const mapper = SbCompletionService.tokenMapper;
+
         if (!db) {
             console.warn("[Warning] DB is not loaded yet.");
             return [];
@@ -141,7 +160,6 @@ export class SbCompletionService {
 
             if (db[stateKey]) {
                 const candidates = db[stateKey];
-
                 // 로그
                 const patterns = candidates.map(c => c.key);
                 console.log(`State ${state}: Found ${candidates.length} candidates -> ${JSON.stringify(patterns)}`);
@@ -174,8 +192,14 @@ export class SbCompletionService {
         // VS Code는 sortText 문자열 순서대로 UI에 표시하므로, 
         // 정렬이 끝난 후 최종 순서대로 "001", "002"를 매겨야 함.
         const finalResult = result.map((item, index) => {
+
+            // mapper가 있으면 변환, 없으면 원본
+            const readableKey = mapper 
+                ? this.convertKeyToReadable(item.key, mapper) 
+                : item.key;
+
             return {
-                key: item.key,
+                key: readableKey, // item.key,
                 value: item.value,
                 sortText: (index + 1).toString().padStart(3, "0") // "001", "002"...
             };
@@ -190,6 +214,17 @@ export class SbCompletionService {
         return finalResult;
     }
 
+    // helper
+    private convertKeyToReadable(rawKeyString: string, mapper: TokenMapper): string {
+        try {
+            const content = rawKeyString.replace(/^\[|\]$/g, "");
+            const tokens = content.split(",").map(t => t.trim());
+            const convertedTokens = tokens.map(token => mapper.getHumanReadableName(token));
+            return `[${convertedTokens.join(", ")}]`;
+        } catch (e) {
+            return rawKeyString;
+        }
+    }
 
     // =========================================================================
     // [Core Logic 1] Structural Candidates
