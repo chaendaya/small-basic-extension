@@ -16,7 +16,7 @@
   "contributes": {
     "keybindings": [
       {
-        "command": "extension.promptkey",
+        "command": "extension.triggerParsing",
         "key": "ctrl+space",
         "when": "editorTextFocus && !suggestWidgetVisible"
       }

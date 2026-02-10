@@ -15,14 +15,14 @@ import { TokenMapper } from "./mapLoader";
 import { SYSTEM_ROLE, generateCompletionPrompt } from "./prompts";
 
 // 구조적 후보 데이터 인터페이스 (DB 저장 형태)
-interface StructCandidate {
+interface CandidateData {
   key: string;    // 예: "[ID, =, STR]"
   value: number;  // 빈도수
 }
 
 // 상태 ID를 키로 하는 후보군 DB 인터페이스
 interface CandidateDB {
-  [stateId: string]: StructCandidate[];
+  [stateId: string]: CandidateData[];
 }
 
 export class SbCompletionService {
@@ -37,23 +37,21 @@ export class SbCompletionService {
     private static tokenMapper: TokenMapper | null = null;
     private openai: OpenAI | undefined;
 
-    /** 생성자
-     * @brief 서비스 초기화 및 리소스 로딩
-     * @param extensionPath 확장 프로그램의 루트 경로 (리소스 파일 접근용)
-     * @param fullText 에디터의 전체 소스 코드
-     * @param offset 커서의 절대 위치 (Byte Offset)
-     */
+    // =========================================================================
+    // [생성자] 서비스 초기화 및 리소스 로딩
+    // =========================================================================
+    // * extensionPath 확장 프로그램의 루트 경로 (리소스 파일 접근용)
+    // * fullText 에디터의 전체 소스 코드
+    // * row, col 커서 위치
     constructor(extensionPath: string, fullText: string, row: number, col: number) {
         this.fullText = fullText;
         this.row = row;
         this.col = col;
-        // ---------------------------------------------------------
-        // 1. OpenAI API Key 로딩 (secrets.json)
-        // ---------------------------------------------------------
+
+        // OpenAI API Key 로딩 (secrets.json)
         let apiKey = "";
         try {
             const secretPath = path.join(extensionPath, 'secrets.json');
-            
             if (fs.existsSync(secretPath)) {
                 const secretData = fs.readFileSync(secretPath, 'utf8');
                 const secrets = JSON.parse(secretData);
@@ -65,7 +63,6 @@ export class SbCompletionService {
         } catch (err) {
             console.error("[Error] Failed to read secrets.json:", err);
         }
-
         if (!apiKey) {
             vscode.window.showErrorMessage("API Key가 없습니다. 프로젝트 루트에 secrets.json을 생성하고 키를 넣어주세요.");
             console.error("[Error] OpenAI API Key is missing.");
@@ -90,21 +87,17 @@ export class SbCompletionService {
             }
         }
 
-        // ---------------------------------------------------------
-        // 2. Native C++ Addon 로딩
-        // ---------------------------------------------------------
+        // Native C++ Addon 로딩
         const addonPath = path.join(extensionPath, 'build', 'Release', 'sb_parser_addon.node');
         try {
             // .node 모듈은 동적으로 require
             this.parserAddon = require(addonPath);
         } catch (e) {
-            console.error(`[CRITICAL] Addon 로딩 실패! 경로: ${addonPath}`, e);
+            console.error(`[Error] Addon 로딩 실패! 경로: ${addonPath}`, e);
             vscode.window.showErrorMessage("파서 모듈을 찾을 수 없습니다.");
         }
 
-        // ---------------------------------------------------------
-        // 3. 구조적 후보 DB 로딩
-        // ---------------------------------------------------------
+        // 구조적 후보 DB 로딩
         if (!SbCompletionService.candidateDB) {
           this.loadCandidateDB(extensionPath);
         }
@@ -113,9 +106,7 @@ export class SbCompletionService {
     // =========================================================================
     // [DB] Database Management
     // =========================================================================  
-    /**
-     * @brief 로컬 JSON 파일에서 구조적 후보 데이터를 메모리로 로드한다.
-     */
+    // * 로컬 JSON 파일에서 구조적 후보 데이터를 로드
     private loadCandidateDB(extensionPath: string) {
       try {
         const jsonPath = path.join(extensionPath, 'src', 'smallbasic_candidates.json');
@@ -134,13 +125,9 @@ export class SbCompletionService {
       }
     }
 
-    /**
-     * @brief 파서 상태(State ID)들의 집합에 매핑되는 구조적 후보들을 조회하고 합침
-     * - 여러 State에서 공통적으로 등장하는 후보는 빈도수(Value)를 합산
-     * - 최종적으로 빈도수가 높은 순서대로 정렬하여 반환
-     * * @param states 파서가 반환한 상태 ID 배열 (예: [51, 65, 240])
-     * @returns 정렬된 후보 목록
-     */
+    // * 파서 상태들(states)에 매핑되는 구조적 후보들을 조회하고 합침
+    // * 여러 State에서 공통적으로 등장하는 후보는 빈도수(Value)를 합산
+    // * 최종적으로 빈도수가 높은 순서대로 정렬하여 반환
     public lookupDB(states: number[]) {
         const db = SbCompletionService.candidateDB;
         const mapper = SbCompletionService.tokenMapper;
@@ -226,36 +213,31 @@ export class SbCompletionService {
         }
     }
 
-    // =========================================================================
-    // [Core Logic 1] Structural Candidates
-    // =========================================================================
-    /**
-     * @brief 비동기 데이터 처리를 위한 콜백 등록
-     * 구조적 후보 조회가 완료되면 호출된다.
-     */
+    // * 비동기 데이터 처리를 위한 콜백 등록
+    // * 구조적 후보 조회가 완료되면 호출된다
     public onDataReceived(callback: (data: any) => void) {
         this.dataReceivedCallback = callback;
     }
 
-    /**
-     * @brief [Step 1] 파서 상태 분석 및 구조적 후보 도출
-     * 1. C++ Addon을 통해 파싱 경로(State Path)를 가져옵니다.
-     * 2. 경로상의 모든 State에 대해 DB를 조회합니다.
-     * 3. 결과들을 합집합(Union) 처리하고, 중복된 후보는 빈도수를 합산합니다.
-     */
+    // =========================================================================
+    // [Core Logic 1] Structural Candidates
+    // =========================================================================
+    // * C++ Addon을 통해 컨버전 결과를 얻음
+    // * 컨버전 결과의 모든 State에 대해 DB를 조회
+    // * 조회된 구조적 후보 합집합, 중복된 후보는 빈도수 합산
     public getStructCandidates() {
         try {
             console.log(`Requesting Parse: Row ${this.row}, Col ${this.col}`);
 
-            // 1. C++ Addon 호출 (number[] 배열을 반환)
+            // C++ Addon 호출 (number[] 배열을 반환)
             // 예: [51, 29, 65, 240]
             const states = this.parserAddon.getConversionResult(this.fullText, this.row, this.col);
             console.log("Parsed State Path:", JSON.stringify(states));
 
-            // 2. DB 조회 (lookupDB가 알아서 합치고 정렬)
+            // DB 조회 (lookupDB가 알아서 합치고 정렬)
             const structCandidates = this.lookupDB(states);
 
-            // 3. 결과 전달 (extension.ts로 콜백)
+            // 결과 전달 (extension.ts로 콜백)
             if (this.dataReceivedCallback) {
                 this.dataReceivedCallback(structCandidates);
             }
@@ -267,13 +249,9 @@ export class SbCompletionService {
     // =========================================================================
     // [Core Logic 2] Textual Candidates (LLM)
     // =========================================================================
-    /**
-     * @brief [Step 2] LLM을 이용한 실제 코드 생성
-     * 구조적 후보와 문맥(Context)을 조합하여 OpenAI에 코드를 요청한다.
-     * * @param structCandidate 구조적 후보 (예: "Identifier = String")
-     * @param fullContext 커서 이전까지의 전체 코드 문맥
-     * @returns LLM이 생성한 코드 문자열
-     */
+    // * LLM을 이용한 실제 코드 생성
+    // * 구조적 후보와 문맥(Context)을 조합하여 OpenAI에 코드를 요청
+    // * LLM이 생성한 코드 문자열를 리턴
     public async getTextCandidate(
       structCandidate: string,
       fullContext: string

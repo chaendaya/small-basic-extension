@@ -16,10 +16,15 @@ export class TokenMapper {
         this.mapping = JSON.parse(rawData);
     }
 
-    /**
-     * 내부 토큰 이름을 LLM에게 전달할 친숙한 이름으로 변환합니다.
-     */
+    // =========================================================================
+    // [토큰 매핑] 내부 토큰 이름을 LLM에게 전달할 이름으로 변환
+    // =========================================================================
     public getHumanReadableName(tokenName: string): string {
+
+        if (TokenMapper.KEYWORD_MAP[tokenName]) {
+            return TokenMapper.KEYWORD_MAP[tokenName];
+        }
+
         const info = this.mapping[tokenName];
 
         // 1. 매핑 정보가 없으면 원래 이름 반환
@@ -49,18 +54,17 @@ export class TokenMapper {
         return tokenName;
     }
 
-    /**
-     * 토큰 이름이 Tree-sitter가 자동 생성한 익명 토큰인지 확인합니다.
-     * 보통 "_token숫자"로 끝나는 경우입니다.
-     */
+    // =========================================================================
+    // [Helper Functions]
+    // =========================================================================
+    // * 토큰 이름이 Tree-sitter가 자동 생성한 익명 토큰인지 확인
+    // * 보통 "_token숫자"로 끝나는 경우
     private isGeneratedName(name: string): boolean {
         // 예: Stmt_token1, OptStep_token1, CR_token1
         return /_token\d+$/.test(name);
     }
 
-    /**
-     * 정규표현식을 사람이 읽기 좋은 텍스트로 변환합니다.
-     */
+    // * 정규표현식을 사람이 읽기 좋은 텍스트로 변환
     private cleanRegex(regex: string, originalName: string): string {
         // Case A: [Ss][Tt][Ee][Pp] 형태의 대소문자 무시 패턴
         // 대괄호 [...] 패턴이 포함되어 있다면 변환 시도
@@ -81,5 +85,10 @@ export class TokenMapper {
 
         // Case C: 변환하기 너무 복잡하거나 실패하면 원래 토큰 이름(혹은 다른 플레이스홀더) 반환
         return originalName; 
+    }
+
+    private static readonly KEYWORD_MAP: Record<string, string> = {
+        "ID": "Identifier",
+        "Idxs": "[Index]"
     }
 }
