@@ -311,7 +311,7 @@ export function activate(context: vscode.ExtensionContext) {
                   candidatesData = data;  // 전역 변수에 구조 후보 데이터 저장
                   
                   // 5. Step 2 (자동완성 로직 트리거) 실행
-                  vscode.commands.executeCommand("extension.generateCode"); // previewStructures generateCode
+                  vscode.commands.executeCommand("extension.previewStructures"); // previewStructures generateCode
               });
 
               // 4. 파싱 시작 (구조적 후보 도출 요청)

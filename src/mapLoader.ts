@@ -80,8 +80,8 @@ export class TokenMapper {
         }
 
         // Case B: 이스케이프 문자 처리 (필요시)
-        if (regex === "\\r\\n") return "<CRLF>";
-        if (regex === "\\n") return "<LF>";
+        if (regex === "\\r\\n") return "<CR>";
+        if (regex === "\\n") return "<CR>";
 
         // Case C: 변환하기 너무 복잡하거나 실패하면 원래 토큰 이름(혹은 다른 플레이스홀더) 반환
         return originalName; 
