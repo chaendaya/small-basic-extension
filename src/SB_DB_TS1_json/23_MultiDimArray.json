@@ -29,22 +29,6 @@
       "value": 8
     }
   ],
-  "9": [
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 5
-    },
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 1
-    }
-  ],
-  "19": [
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 1
-    }
-  ],
   "21": [
     {
       "key": "[)]",
@@ -85,20 +69,34 @@
       "value": 2
     }
   ],
-  "141": [
+  "97": [
     {
-      "key": "[ID, Idxs]",
-      "value": 2
-    }
-  ],
-  "175": [
-    {
-      "key": "[ID, =, Expr]",
-      "value": 1
+      "key": "[ID, Idxs, =, Expr]",
+      "value": 4
     },
     {
       "key": "[ID, ., ID, (, Exprs, )]",
       "value": 1
+    }
+  ],
+  "101": [
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
+      "value": 2
+    },
+    {
+      "key": "[ID, Idxs, =, Expr]",
+      "value": 1
+    },
+    {
+      "key": "[ID, =, Expr]",
+      "value": 1
+    }
+  ],
+  "141": [
+    {
+      "key": "[ID, Idxs]",
+      "value": 2
     }
   ],
   "188": [

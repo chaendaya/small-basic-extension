@@ -5,16 +5,6 @@
       "value": 1
     }
   ],
-  "9": [
-    {
-      "key": "[ID, ., ID, =, Expr]",
-      "value": 3
-    },
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 2
-    }
-  ],
   "25": [
     {
       "key": "[NUM]",
@@ -37,9 +27,23 @@
       "value": 2
     }
   ],
-  "175": [
+  "97": [
     {
       "key": "[ID, ., ID, =, Expr]",
+      "value": 2
+    },
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
+      "value": 1
+    }
+  ],
+  "101": [
+    {
+      "key": "[ID, ., ID, =, Expr]",
+      "value": 2
+    },
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
       "value": 1
     }
   ],

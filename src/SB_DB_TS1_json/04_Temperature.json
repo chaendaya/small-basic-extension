@@ -17,12 +17,6 @@
       "value": 1
     }
   ],
-  "9": [
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 1
-    }
-  ],
   "10": [
     {
       "key": "[*, UnaryExpr]",
@@ -30,12 +24,6 @@
     },
     {
       "key": "[/, UnaryExpr]",
-      "value": 1
-    }
-  ],
-  "19": [
-    {
-      "key": "[ID, =, Expr]",
       "value": 1
     }
   ],
@@ -77,6 +65,16 @@
       "value": 1
     }
   ],
+  "97": [
+    {
+      "key": "[ID, =, Expr]",
+      "value": 2
+    },
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
+      "value": 1
+    }
+  ],
   "141": [
     {
       "key": "[NUM]",
@@ -94,12 +92,6 @@
     },
     {
       "key": "[NUM]",
-      "value": 1
-    }
-  ],
-  "175": [
-    {
-      "key": "[ID, =, Expr]",
       "value": 1
     }
   ],

@@ -5,21 +5,9 @@
       "value": 1
     }
   ],
-  "2": [
-    {
-      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
-      "value": 1
-    }
-  ],
   "5": [
     {
       "key": "[., ID, (, Exprs, )]",
-      "value": 1
-    }
-  ],
-  "9": [
-    {
-      "key": "[ID, ., ID, =, Expr]",
       "value": 1
     }
   ],
@@ -38,12 +26,6 @@
   "27": [
     {
       "key": "[ID]",
-      "value": 1
-    }
-  ],
-  "49": [
-    {
-      "key": "[CR_token2]",
       "value": 1
     }
   ],
@@ -69,11 +51,23 @@
       "value": 1
     }
   ],
-  "160": [
+  "97": [
+    {
+      "key": "[ID, ., ID, =, Expr]",
+      "value": 1
+    },
+    {
+      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
+      "value": 1
+    }
+  ],
+  "105": [
     {
       "key": "[ID, =, Expr]",
       "value": 1
-    },
+    }
+  ],
+  "106": [
     {
       "key": "[ID, ., ID, (, Exprs, )]",
       "value": 1
@@ -101,10 +95,10 @@
       "value": 1
     }
   ],
-  "210": [
+  "206": [
     {
       "key": "[CR_token2]",
-      "value": 1
+      "value": 2
     }
   ],
   "214": [
