@@ -152,13 +152,7 @@
     },
     {
       "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
-      "value": 1
-    }
-  ],
-  "101": [
-    {
-      "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
-      "value": 1
+      "value": 2
     }
   ],
   "140": [

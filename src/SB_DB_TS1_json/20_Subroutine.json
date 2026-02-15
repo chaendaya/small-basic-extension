@@ -67,13 +67,11 @@
       "value": 1
     },
     {
-      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
-      "value": 1
-    }
-  ],
-  "101": [
-    {
       "key": "[ID, (, )]",
+      "value": 1
+    },
+    {
+      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
       "value": 1
     }
   ],

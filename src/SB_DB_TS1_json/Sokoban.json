@@ -1,29 +1,11 @@
 {
+  "0": [
+    {
+      "key": "[Start_repeat1]",
+      "value": 6
+    }
+  ],
   "1": [
-    {
-      "key": "[Comment, Comment, Comment, Comment, Comment, Comment, Start_repeat1, end]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Comment, Comment, Comment, Comment, Start_repeat1, end]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Comment, Comment, Comment, Start_repeat1, end]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Comment, Comment, Start_repeat1, end]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Comment, Start_repeat1, end]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Start_repeat1, end]",
-      "value": 1
-    },
     {
       "key": "[ID, ., ID, (, )]",
       "value": 1
@@ -344,30 +326,34 @@
   "68": [
     {
       "key": "[ID, =, Expr]",
-      "value": 104
+      "value": 126
     },
     {
       "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 63
-    },
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 21
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 15
+      "value": 87
     },
     {
       "key": "[ID, ., ID, =, Expr]",
+      "value": 28
+    },
+    {
+      "key": "[ID, Idxs, =, Expr]",
+      "value": 25
+    },
+    {
+      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
+      "value": 24
+    },
+    {
+      "key": "[ID, (, )]",
       "value": 4
     },
     {
       "key": "[Stmt_token1, Expr, CRStmtCRs, Stmt_token2]",
-      "value": 1
+      "value": 2
     },
     {
-      "key": "[ID, (, )]",
+      "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
       "value": 1
     }
   ],
@@ -403,40 +389,6 @@
     {
       "key": "[-, Primary]",
       "value": 2
-    }
-  ],
-  "72": [
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 24
-    },
-    {
-      "key": "[ID, ., ID, =, Expr]",
-      "value": 24
-    },
-    {
-      "key": "[ID, =, Expr]",
-      "value": 22
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 9
-    },
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 4
-    },
-    {
-      "key": "[ID, (, )]",
-      "value": 3
-    },
-    {
-      "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
-      "value": 1
-    },
-    {
-      "key": "[Stmt_token1, Expr, CRStmtCRs, Stmt_token2]",
-      "value": 1
     }
   ],
   "73": [
@@ -619,20 +571,6 @@
       "value": 1
     }
   ],
-  "89": [
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 8
-    },
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 5
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 1
-    }
-  ],
   "90": [
     {
       "key": "[<, AdditiveExpr]",
@@ -684,23 +622,19 @@
   "96": [
     {
       "key": "[ID, Idxs, =, Expr]",
-      "value": 11
+      "value": 19
+    },
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
+      "value": 13
     },
     {
       "key": "[ID, =, Expr]",
       "value": 9
     },
     {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 8
-    },
-    {
       "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 5
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, Comment, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 1
+      "value": 7
     },
     {
       "key": "[Stmt_token9, Expr, Stmt_token10, Stmt_repeat1, MoreThanZeroElseIf]",
@@ -709,27 +643,35 @@
   ],
   "97": [
     {
-      "key": "[ID, ., ID, =, Expr]",
-      "value": 3
-    },
-    {
-      "key": "[Comment, Comment, Comment, Start_repeat1]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Comment, Start_repeat1]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Start_repeat1]",
-      "value": 1
-    },
-    {
       "key": "[ID, =, Expr]",
-      "value": 1
+      "value": 30
     },
     {
       "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
+      "value": 14
+    },
+    {
+      "key": "[ID, Idxs, =, Expr]",
+      "value": 10
+    },
+    {
+      "key": "[ID, ., ID, =, Expr]",
+      "value": 6
+    },
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
+      "value": 5
+    },
+    {
+      "key": "[ID, (, )]",
+      "value": 5
+    },
+    {
+      "key": "[Start_repeat1]",
+      "value": 3
+    },
+    {
+      "key": "[Stmt_token1, Expr, CRStmtCRs, Stmt_token2]",
       "value": 1
     }
   ],
@@ -749,48 +691,12 @@
   ],
   "101": [
     {
-      "key": "[ID, =, Expr]",
-      "value": 29
+      "key": "[Prog]",
+      "value": 8
     },
     {
-      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
-      "value": 13
-    },
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 10
-    },
-    {
-      "key": "[Comment, Prog]",
-      "value": 6
-    },
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 5
-    },
-    {
-      "key": "[ID, (, )]",
-      "value": 5
-    },
-    {
-      "key": "[ID, ., ID, =, Expr]",
+      "key": "[Start_repeat1]",
       "value": 3
-    },
-    {
-      "key": "[Comment, Start_repeat1]",
-      "value": 3
-    },
-    {
-      "key": "[Comment, Comment, Comment, Prog]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, Comment, Prog]",
-      "value": 1
-    },
-    {
-      "key": "[Stmt_token1, Expr, CRStmtCRs, Stmt_token2]",
-      "value": 1
     }
   ],
   "102": [
@@ -825,7 +731,7 @@
       "value": 1
     },
     {
-      "key": "[Comment, CRStmtCRs_repeat1]",
+      "key": "[CRStmtCRs_repeat1]",
       "value": 1
     },
     {
@@ -843,62 +749,28 @@
   ],
   "106": [
     {
+      "key": "[ID, Idxs, =, Expr]",
+      "value": 159
+    },
+    {
       "key": "[ID, =, Expr]",
-      "value": 12
+      "value": 31
     },
     {
       "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
-      "value": 9
+      "value": 14
     },
     {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 7
+      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
+      "value": 6
+    },
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
+      "value": 3
     },
     {
       "key": "[ID, ., ID, =, Expr]",
       "value": 2
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 2
-    },
-    {
-      "key": "[Stmt_token1, Expr, Stmt_repeat1, Stmt_token2]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, TheRest]",
-      "value": 1
-    },
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 1
-    }
-  ],
-  "107": [
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 152
-    },
-    {
-      "key": "[ID, =, Expr]",
-      "value": 19
-    },
-    {
-      "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
-      "value": 5
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 4
-    },
-    {
-      "key": "[Comment, CRStmtCRs_repeat1]",
-      "value": 4
-    },
-    {
-      "key": "[Comment, TheRest]",
-      "value": 3
     },
     {
       "key": "[Stmt_token9, Expr, Stmt_token10, Stmt_repeat1, MoreThanZeroElseIf]",
@@ -909,16 +781,26 @@
       "value": 2
     },
     {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 2
+      "key": "[Stmt_token1, Expr, Stmt_repeat1, Stmt_token2]",
+      "value": 1
+    },
+    {
+      "key": "[TheRest]",
+      "value": 1
     },
     {
       "key": "[Stmt_token1, Expr, CRStmtCRs, Stmt_token2]",
       "value": 1
+    }
+  ],
+  "107": [
+    {
+      "key": "[CRStmtCRs_repeat1]",
+      "value": 5
     },
     {
-      "key": "[Comment, Comment, CRStmtCRs_repeat1]",
-      "value": 1
+      "key": "[TheRest]",
+      "value": 3
     }
   ],
   "113": [
@@ -944,10 +826,10 @@
   "115": [
     {
       "key": "[MoreThanZeroElseIf_token1, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 8
+      "value": 9
     },
     {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 8
     },
     {
@@ -965,10 +847,6 @@
     {
       "key": "[MoreThanZeroElseIf_token1, Expr, Stmt_token10, Stmt_repeat1, MoreThanZeroElseIf]",
       "value": 2
-    },
-    {
-      "key": "[MoreThanZeroElseIf_token1, Expr, Stmt_token10, Comment, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 1
     }
   ],
   "117": [
@@ -991,7 +869,7 @@
       "value": 22
     },
     {
-      "key": "[Comment, CRStmtCRs, MoreThanZeroElseIf]",
+      "key": "[CRStmtCRs, MoreThanZeroElseIf]",
       "value": 3
     }
   ],
@@ -1002,23 +880,19 @@
     },
     {
       "key": "[CR_token2]",
-      "value": 25
+      "value": 35
     },
     {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 19
     },
     {
       "key": "[MoreThanZeroElseIf_token1, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 8
+      "value": 10
     },
     {
       "key": "[OptionalElse_token2, CRStmtCRs, OptionalElse_token1]",
       "value": 3
-    },
-    {
-      "key": "[MoreThanZeroElseIf_token1, Expr, Stmt_token10, Comment, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 2
     },
     {
       "key": "[MoreThanZeroElseIf_token1, Expr, Stmt_token10, Stmt_repeat1, MoreThanZeroElseIf]",
@@ -1031,7 +905,7 @@
       "value": 78
     },
     {
-      "key": "[Comment, CRStmtCRs, MoreThanZeroElseIf]",
+      "key": "[CRStmtCRs, MoreThanZeroElseIf]",
       "value": 1
     }
   ],
@@ -1095,15 +969,11 @@
   ],
   "142": [
     {
-      "key": "[CR_token2]",
-      "value": 10
-    },
-    {
-      "key": "[Comment, Stmt_repeat1]",
+      "key": "[Stmt_repeat1]",
       "value": 2
     },
     {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 1
     }
   ],
@@ -1176,10 +1046,10 @@
     },
     {
       "key": "[CR_token2]",
-      "value": 6
+      "value": 7
     },
     {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 1
     }
   ],
@@ -1191,11 +1061,7 @@
   ],
   "182": [
     {
-      "key": "[Comment, CRStmtCRs]",
-      "value": 1
-    },
-    {
-      "key": "[CR_token2]",
+      "key": "[CRStmtCRs]",
       "value": 1
     }
   ],
@@ -1244,7 +1110,7 @@
   "187": [
     {
       "key": "[CR_token2]",
-      "value": 4
+      "value": 5
     },
     {
       "key": "[Stmt_token2]",
@@ -1274,12 +1140,6 @@
     },
     {
       "key": "[., ID, (, )]",
-      "value": 1
-    }
-  ],
-  "191": [
-    {
-      "key": "[CR_token2]",
       "value": 1
     }
   ],
@@ -1331,7 +1191,7 @@
       "value": 8
     },
     {
-      "key": "[Comment, CR]",
+      "key": "[CR]",
       "value": 1
     }
   ],
@@ -1400,14 +1260,10 @@
   "236": [
     {
       "key": "[Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 16
+      "value": 19
     },
     {
       "key": "[Stmt_token10, Stmt_repeat1, MoreThanZeroElseIf]",
-      "value": 3
-    },
-    {
-      "key": "[Stmt_token10, Comment, CRStmtCRs, MoreThanZeroElseIf]",
       "value": 3
     }
   ],
@@ -1498,15 +1354,11 @@
   "254": [
     {
       "key": "[Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 65
+      "value": 66
     },
     {
       "key": "[Stmt_token10, Stmt_repeat1, MoreThanZeroElseIf]",
       "value": 12
-    },
-    {
-      "key": "[Stmt_token10, Comment, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 1
     }
   ],
   "255": [

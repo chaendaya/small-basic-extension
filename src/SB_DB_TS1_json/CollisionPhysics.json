@@ -1,9 +1,11 @@
 {
-  "1": [
+  "0": [
     {
-      "key": "[Comment, Start_repeat1, end]",
+      "key": "[Start_repeat1]",
       "value": 1
-    },
+    }
+  ],
+  "1": [
     {
       "key": "[ID, ., ID, (, )]",
       "value": 1
@@ -290,15 +292,15 @@
   "68": [
     {
       "key": "[ID, =, Expr]",
-      "value": 49
-    },
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 10
+      "value": 56
     },
     {
       "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 8
+      "value": 22
+    },
+    {
+      "key": "[ID, Idxs, =, Expr]",
+      "value": 13
     }
   ],
   "70": [
@@ -332,20 +334,6 @@
     },
     {
       "key": "[-, Primary]",
-      "value": 3
-    }
-  ],
-  "72": [
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 14
-    },
-    {
-      "key": "[ID, =, Expr]",
-      "value": 7
-    },
-    {
-      "key": "[ID, Idxs, =, Expr]",
       "value": 3
     }
   ],
@@ -459,12 +447,6 @@
       "value": 1
     }
   ],
-  "89": [
-    {
-      "key": "[ID, =, Expr]",
-      "value": 4
-    }
-  ],
   "91": [
     {
       "key": "[<, AdditiveExpr]",
@@ -476,28 +458,6 @@
     },
     {
       "key": "[>=, AdditiveExpr]",
-      "value": 1
-    }
-  ],
-  "92": [
-    {
-      "key": "[ID, ., ID, =, Expr]",
-      "value": 2
-    },
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 2
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 2
-    },
-    {
-      "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
-      "value": 1
-    },
-    {
-      "key": "[ID, =, Expr]",
       "value": 1
     }
   ],
@@ -514,17 +474,29 @@
   "95": [
     {
       "key": "[ID, =, Expr]",
-      "value": 3
+      "value": 4
     },
     {
       "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
+      "value": 4
+    },
+    {
+      "key": "[ID, ., ID, =, Expr]",
       "value": 2
+    },
+    {
+      "key": "[ID, ., ID, (, Exprs, )]",
+      "value": 2
+    },
+    {
+      "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
+      "value": 1
     }
   ],
   "96": [
     {
       "key": "[ID, =, Expr]",
-      "value": 10
+      "value": 14
     },
     {
       "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
@@ -545,48 +517,16 @@
   ],
   "97": [
     {
+      "key": "[ID, =, Expr]",
+      "value": 20
+    },
+    {
+      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
+      "value": 9
+    },
+    {
       "key": "[ID, ., ID, =, Expr]",
-      "value": 3
-    },
-    {
-      "key": "[ID, =, Expr]",
-      "value": 2
-    },
-    {
-      "key": "[Comment, Prog]",
-      "value": 1
-    },
-    {
-      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
-      "value": 1
-    }
-  ],
-  "100": [
-    {
-      "key": "[ID]",
-      "value": 2
-    }
-  ],
-  "101": [
-    {
-      "key": "[ID, =, Expr]",
-      "value": 18
-    },
-    {
-      "key": "[Comment, Prog]",
-      "value": 10
-    },
-    {
-      "key": "[Comment, Start_repeat1]",
-      "value": 10
-    },
-    {
-      "key": "[Stmt_token7, ID, CRStmtCRs, Stmt_token8]",
       "value": 8
-    },
-    {
-      "key": "[ID, ., ID, =, Expr]",
-      "value": 5
     },
     {
       "key": "[ID, :]",
@@ -603,6 +543,26 @@
     {
       "key": "[Stmt_token1, Expr, Stmt_repeat1, Stmt_token2]",
       "value": 1
+    },
+    {
+      "key": "[Prog]",
+      "value": 1
+    }
+  ],
+  "100": [
+    {
+      "key": "[ID]",
+      "value": 2
+    }
+  ],
+  "101": [
+    {
+      "key": "[Prog]",
+      "value": 10
+    },
+    {
+      "key": "[Start_repeat1]",
+      "value": 10
     }
   ],
   "102": [
@@ -621,7 +581,7 @@
       "value": 2
     },
     {
-      "key": "[Comment, TheRest]",
+      "key": "[TheRest]",
       "value": 1
     },
     {
@@ -635,77 +595,49 @@
   ],
   "106": [
     {
-      "key": "[ID, =, Expr]",
-      "value": 8
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
-      "value": 5
-    },
-    {
       "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 4
+      "value": 46
     },
     {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 2
-    },
-    {
-      "key": "[Comment, CRStmtCRs_repeat1]",
-      "value": 2
+      "key": "[ID, =, Expr]",
+      "value": 13
     },
     {
       "key": "[ID, ., ID, =, Expr]",
-      "value": 2
+      "value": 13
+    },
+    {
+      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
+      "value": 6
+    },
+    {
+      "key": "[ID, (, )]",
+      "value": 5
+    },
+    {
+      "key": "[ID, Idxs, =, Expr]",
+      "value": 4
     },
     {
       "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
+      "value": 3
+    },
+    {
+      "key": "[CRStmtCRs_repeat1]",
       "value": 2
     },
     {
-      "key": "[Comment, TheRest]",
+      "key": "[TheRest]",
       "value": 1
     },
     {
       "key": "[ID, ., ID, (, )]",
       "value": 1
-    },
-    {
-      "key": "[ID, (, )]",
-      "value": 1
     }
   ],
   "107": [
     {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 42
-    },
-    {
-      "key": "[ID, ., ID, =, Expr]",
-      "value": 11
-    },
-    {
-      "key": "[ID, =, Expr]",
-      "value": 5
-    },
-    {
-      "key": "[ID, (, )]",
-      "value": 4
-    },
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 2
-    },
-    {
-      "key": "[Stmt_token4, ID, =, Expr, Stmt_token5, Expr, CRStmtCRs, Stmt_token6]",
-      "value": 1
-    },
-    {
-      "key": "[Comment, TheRest]",
-      "value": 1
-    },
-    {
-      "key": "[Stmt_token9, Expr, Stmt_token10, CRStmtCRs, MoreThanZeroElseIf]",
+      "key": "[TheRest]",
       "value": 1
     }
   ],
@@ -732,10 +664,10 @@
     },
     {
       "key": "[CR_token2]",
-      "value": 5
+      "value": 9
     },
     {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 3
     },
     {
@@ -743,7 +675,7 @@
       "value": 2
     },
     {
-      "key": "[Comment, Stmt_repeat1]",
+      "key": "[Stmt_repeat1]",
       "value": 2
     }
   ],
@@ -793,15 +725,11 @@
   ],
   "142": [
     {
-      "key": "[CR_token2]",
-      "value": 4
-    },
-    {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 3
     },
     {
-      "key": "[Comment, Stmt_repeat1]",
+      "key": "[Stmt_repeat1]",
       "value": 1
     }
   ],
@@ -885,7 +813,7 @@
       "value": 7
     },
     {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 1
     },
     {
@@ -895,7 +823,7 @@
   ],
   "179": [
     {
-      "key": "[Comment, CRStmtCRs]",
+      "key": "[CRStmtCRs]",
       "value": 3
     },
     {

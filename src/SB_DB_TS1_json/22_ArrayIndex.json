@@ -70,21 +70,11 @@
   "97": [
     {
       "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 2
+      "value": 5
     },
     {
       "key": "[ID, Idxs, =, Expr]",
-      "value": 1
-    }
-  ],
-  "101": [
-    {
-      "key": "[ID, Idxs, =, Expr]",
-      "value": 3
-    },
-    {
-      "key": "[ID, ., ID, (, Exprs, )]",
-      "value": 3
+      "value": 4
     },
     {
       "key": "[ID, =, Expr]",
