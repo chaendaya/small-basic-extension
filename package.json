@@ -14,11 +14,23 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configurationDefaults": {
+      "editor.wordBasedSuggestions": "off",
+      "editor.snippetSuggestions": "none",
+      "editor.suggest.showWords": false,
+      "editor.suggest.showSnippets": false,
+      "php.suggest.basic": false,
+      "javascript.suggest.enabled": false,
+      "typescript.suggest.enabled": false,
+      "html.suggest.html5": false,
+      "css.completion.completePropertyWithSemicolon": false,
+      "json.schemas": []
+    },
     "keybindings": [
       {
         "command": "extension.triggerParsing",
         "key": "ctrl+space",
-        "when": "editorTextFocus && !suggestWidgetVisible && (editorLangId == 'smallbasic' || editorLangId == 'c')"
+        "when": "editorTextFocus && !suggestWidgetVisible"
       }
     ],
     "languages": [
@@ -33,6 +45,16 @@
           ".smallbasic"
         ],
         "configuration": "./sb-language-configuration.json"
+      },
+      {
+        "id": "haskell",
+        "aliases": [
+          "Haskell"
+        ],
+        "extensions": [
+          ".hs",
+          ".lhs"
+        ]
       }
     ],
     "grammars": [

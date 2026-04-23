@@ -20,11 +20,6 @@ export class TokenMapper {
     // [토큰 매핑] 내부 토큰 이름을 LLM에게 전달할 이름으로 변환
     // =========================================================================
     public getHumanReadableName(tokenName: string): string {
-
-        if (TokenMapper.KEYWORD_MAP[tokenName]) {
-            return TokenMapper.KEYWORD_MAP[tokenName];
-        }
-
         const info = this.mapping[tokenName];
 
         // 1. 매핑 정보가 없으면 원래 이름 반환
@@ -66,6 +61,12 @@ export class TokenMapper {
 
     // * 정규표현식을 사람이 읽기 좋은 텍스트로 변환
     private cleanRegex(regex: string, originalName: string): string {
+        // Case 0: 정규식 특수문자가 없는 단순 문자열이면 그대로 리턴
+        // 예: /while/ → "while", /static/ → "static"
+        if (/^[a-zA-Z_][a-zA-Z0-9_ ]*$/.test(regex)) {
+            return regex;
+        }
+
         // Case A: [Ss][Tt][Ee][Pp] 형태의 대소문자 무시 패턴
         // 대괄호 [...] 패턴이 포함되어 있다면 변환 시도
         if (regex.includes('[')) {
@@ -87,8 +88,4 @@ export class TokenMapper {
         return originalName; 
     }
 
-    private static readonly KEYWORD_MAP: Record<string, string> = {
-        "ID": "Identifier",
-        "Idxs": "[Index]"
-    }
 }

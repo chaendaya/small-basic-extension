@@ -2,7 +2,7 @@
  * @file CompletionService.ts
  * @brief 다중 언어 지원 자동완성 서비스 핵심 로직
  *
- * 언어별로 분리된 Native Parser Addon, JSON DB, TokenMapper를 조율합니다.
+ * 언어별로 분리된 Native Parser Addon, JSON DB, TokenMapper를 조율
  * 1. Native C++ Parser (Addon): 커서 위치의 파싱 상태(State ID) 분석
  * 2. JSON Database: 파싱 상태에 따른 구조적 후보군(Structural Candidates) 조회
  * 3. OpenAI LLM: 구조적 후보를 바탕으로 코드 생성
@@ -37,8 +37,7 @@ export interface LanguageConfig {
 export class CompletionService {
     private parserAddon: any;
     private fullText: string;
-    private row: number;
-    private col: number;
+    private byteOffset: number;
     private languageId: string;
     private config: LanguageConfig;
     private dataReceivedCallback: ((data: any) => void) | null = null;
@@ -57,12 +56,10 @@ export class CompletionService {
         languageId: string,
         config: LanguageConfig,
         fullText: string,
-        row: number,
-        col: number
+        byteOffset: number
     ) {
         this.fullText = fullText;
-        this.row = row;
-        this.col = col;
+        this.byteOffset = byteOffset;
         this.languageId = languageId;
         this.config = config;
 
@@ -213,8 +210,8 @@ export class CompletionService {
     // =========================================================================
     public getStructCandidates() {
         try {
-            console.log(`[${this.config.displayName}] Requesting Parse: Row ${this.row}, Col ${this.col}`);
-            const states = this.parserAddon.getConversionResult(this.fullText, this.row, this.col);
+            console.log(`[${this.config.displayName}] Requesting Parse: byteOffset ${this.byteOffset}`);
+            const states = this.parserAddon.getConversionResult(this.fullText, this.byteOffset);
             console.log("Parsed State Path:", JSON.stringify(states));
 
             const structCandidates = this.lookupDB(states);

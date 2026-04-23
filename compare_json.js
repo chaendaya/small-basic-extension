@@ -2,13 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const util = require('util');
 
-// 비교할 두 폴더 경로 (역슬래시 \ 는 \\ 로 이스케이프 처리해야 합니다)
+// 비교할 두 폴더 경로 (역슬래시 \ 는 \\ 로 이스케이프 처리)
 const dir1 = 'C:\\PL\\moniExtension\\Small-Basic-Extension\\src\\SB_DB_json';
 const dir2 = 'C:\\PL\\moniExtension\\Small-Basic-Extension\\src\\SB_DB_TS1_json';
 
 // 폴더가 존재하는지 확인
 if (!fs.existsSync(dir1) || !fs.existsSync(dir2)) {
-    console.error("❌ 폴더 경로를 찾을 수 없습니다. 경로를 확인해주세요.");
+    console.error("폴더 경로를 찾을 수 없습니다. 경로를 확인해주세요.");
     process.exit(1);
 }
 
@@ -27,7 +27,7 @@ files1.forEach(fileName => {
 
     // dir2에도 같은 파일이 있는지 확인
     if (!fs.existsSync(file2Path)) {
-        console.log(`⚠️  [누락] ${fileName} 파일이 두 번째 폴더에 없습니다.`);
+        console.log(`[누락] ${fileName} 파일이 두 번째 폴더에 없습니다.`);
         missingCount++;
         return;
     }
@@ -38,29 +38,28 @@ files1.forEach(fileName => {
         const json2 = JSON.parse(fs.readFileSync(file2Path, 'utf8'));
 
         // 깊은 비교 (Deep Comparison)
-        // util.isDeepStrictEqual은 객체의 구조와 값이 정확히 일치하는지 검사합니다.
-        // 배열 내부의 순서까지 일치해야 같다고 판단합니다.
+        // util.isDeepStrictEqual은 객체의 구조와 값이 정확히 일치하는지 검사
+        // 배열 내부의 순서까지 일치해야 같다고 판단
         const isMatch = util.isDeepStrictEqual(json1, json2);
 
         if (isMatch) {
-            console.log(`✅ [일치] ${fileName}`);
+            console.log(`[일치] ${fileName}`);
             matchCount++;
         } else {
-            console.log(`❌ [불일치] ${fileName}`);
-            // 불일치 상세 내용을 보고 싶으면 아래 주석을 해제하세요.
+            console.log(`[불일치] ${fileName}`);
             compareObjects(json1, json2); 
             mismatchCount++;
         }
 
     } catch (err) {
-        console.error(`🚫 [에러] ${fileName} 처리 중 오류 발생:`, err.message);
+        console.error(`[에러] ${fileName} 처리 중 오류 발생:`, err.message);
     }
 });
 
 console.log('---------------------------------------------------');
 console.log(`결과 요약: 일치(${matchCount}), 불일치(${mismatchCount}), 누락(${missingCount})`);
 
-// (선택 사항) 불일치 시 차이점을 간단히 출력하는 함수
+// 불일치 시 차이점을 간단히 출력하는 함수
 function compareObjects(obj1, obj2) {
     const keys1 = Object.keys(obj1);
     const keys2 = Object.keys(obj2);

@@ -19,15 +19,39 @@
 // C 언어로 작성된 Tree-sitter 파서 및 내부 함수들을 링크하기 위한 선언
 // =============================================================================
 
-// 언어 정의 함수 — binding.gyp의 defines로 컴파일 시 언어 결정
-#if defined(LANG_SMALLBASIC)
-    extern "C" TSLanguage *tree_sitter_smallbasic();
-    #define GET_LANGUAGE() tree_sitter_smallbasic()
-#elif defined(LANG_C)
+// 언어 정의 함수 — generate_build_config.py에 의해 자동 생성됨
+#if defined(LANG_C)
     extern "C" TSLanguage *tree_sitter_c();
     #define GET_LANGUAGE() tree_sitter_c()
+#elif defined(LANG_CPP)
+    extern "C" TSLanguage *tree_sitter_cpp();
+    #define GET_LANGUAGE() tree_sitter_cpp()
+#elif defined(LANG_HASKELL)
+    extern "C" TSLanguage *tree_sitter_haskell();
+    #define GET_LANGUAGE() tree_sitter_haskell()
+#elif defined(LANG_JAVA)
+    extern "C" TSLanguage *tree_sitter_java();
+    #define GET_LANGUAGE() tree_sitter_java()
+#elif defined(LANG_JAVASCRIPT)
+    extern "C" TSLanguage *tree_sitter_javascript();
+    #define GET_LANGUAGE() tree_sitter_javascript()
+#elif defined(LANG_PHP)
+    extern "C" TSLanguage *tree_sitter_php();
+    #define GET_LANGUAGE() tree_sitter_php()
+#elif defined(LANG_PYTHON)
+    extern "C" TSLanguage *tree_sitter_python();
+    #define GET_LANGUAGE() tree_sitter_python()
+#elif defined(LANG_RUBY)
+    extern "C" TSLanguage *tree_sitter_ruby();
+    #define GET_LANGUAGE() tree_sitter_ruby()
+#elif defined(LANG_SMALLBASIC)
+    extern "C" TSLanguage *tree_sitter_smallbasic();
+    #define GET_LANGUAGE() tree_sitter_smallbasic()
+#elif defined(LANG_TYPESCRIPT)
+    extern "C" TSLanguage *tree_sitter_typescript();
+    #define GET_LANGUAGE() tree_sitter_typescript()
 #else
-    #error "언어 정의 없음: binding.gyp의 defines에 LANG_SMALLBASIC 또는 LANG_C를 추가하세요."
+    #error "언어 정의 없음: generate_build_config.py를 실행하세요."
 #endif
 
 // 커스텀 파서 로직 함수 (lib/src/parser.c에 구현됨)
@@ -43,99 +67,37 @@ extern "C" {
 }
 
 // =============================================================================
-// [Helper Function] Offset Calculation
-// =============================================================================
-/**
- * @brief VS Code의 (행, 열) 좌표를 UTF-8 바이트 오프셋으로 변환한다.
- * * Tree-sitter는 바이트 단위 오프셋을 사용하지만, VS Code는 문자 단위(Char) 좌표를 사용하므로
- * 한글 등 멀티바이트 문자가 포함된 경우 변환이 필요하다.
- * * @param text 소스 코드 전체 문자열
- * @param target_row 목표 행
- * @param target_col 목표 열
- * @return size_t 변환된 바이트 오프셋
- */
-size_t FindByteOffsetForPosition(const std::string& text, uint32_t target_row, uint32_t target_col) {
-    size_t current_offset = 0;
-    uint32_t current_row = 0; 
-    uint32_t current_col = 0; 
-    const uint32_t tab_width = 4;
-
-    while (current_offset < text.length()) {
-        if (current_row > target_row || (current_row == target_row && current_col >= target_col)) {
-             return current_offset;
-        }
-
-        unsigned char current_char = static_cast<unsigned char>(text[current_offset]);
-
-        if (current_char == '\n') {
-            current_row++;
-            current_col = 0;
-            current_offset++;
-        } else if (current_char == '\r' && (current_offset + 1 < text.length() && text[current_offset + 1] == '\n')) {
-            current_row++;
-            current_col = 0;
-            current_offset += 2;
-        }
-        // 제거됨. VS Code의 Position 객체는 Tab을 1개의 character로 취급하여 좌표를 보냄
-        // else if (current_char == '\t') {
-        //     current_col = ((current_col / tab_width) + 1) * tab_width;
-        //     current_offset++;
-        // } 
-        
-        else {
-             current_col++;
-             current_offset++;
-             // UTF-8 멀티바이트 처리
-             if (current_char >= 0xC0) { 
-                 while (current_offset < text.length() && (static_cast<unsigned char>(text[current_offset]) & 0xC0) == 0x80) {
-                     current_offset++;
-                 }
-             }
-        }
-    }
-    return text.length();
-}
-
-
-// =============================================================================
 // [Main API] N-API Export Function
 // =============================================================================
 /**
  * @brief JS에서 호출 가능한 파싱 및 컨버전 실행 함수
- * * Signature: getPhysicalState(sourceCode: string, row: number, col: number) -> number
- * * @param info[0] sourceCode (string): 전체 소스 코드
- * @param info[1] row (number): 커서 행 (1-based from VS Code extension)
- * @param info[2] col (number): 커서 열 (1-based from VS Code extension)
- * @return array 컨버전 결과
+ *
+ * Signature: getConversionResult(sourceCode: string, byteOffset: number) -> number[]
+ *
+ * @param info[0] sourceCode (string): 전체 소스 코드
+ * @param info[1] byteOffset (number): 커서 위치의 UTF-8 바이트 오프셋
+ * @return array 컨버전 결과 (상태 경로)
  */
 Napi::Value GetConversionResult(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
     // 1. 인자 유효성 검사
-    if (info.Length() < 3) {
-        Napi::TypeError::New(env, "Args: sourceCode, row, col").ThrowAsJavaScriptException();
+    if (info.Length() < 2) {
+        Napi::TypeError::New(env, "Args: sourceCode, byteOffset").ThrowAsJavaScriptException();
         return env.Null();
     }
 
     // 2. 인자 추출
     std::string source_code = info[0].As<Napi::String>().Utf8Value();
-    uint32_t stop_row_in = info[1].As<Napi::Number>().Uint32Value();
-    uint32_t stop_col_in = info[2].As<Napi::Number>().Uint32Value();
+    uint32_t byte_offset = info[1].As<Napi::Number>().Uint32Value();
 
     // 3. Tree-sitter 파서 초기화
     TSLanguage *language = GET_LANGUAGE();
     TSParser *parser = ts_parser_new();
     ts_parser_set_language(parser, language);
 
-    // 4. 좌표 보정 및 파서 설정
-    uint32_t target_row = stop_row_in > 0 ? stop_row_in - 1 : 0;
-    uint32_t target_col = stop_col_in > 0 ? stop_col_in - 1 : 0;
-
-    TSPoint stop_point = {target_row, target_col};
-    ts_parser_set_cursor_position(parser, stop_point);
-
-    // 5. 바이트 오프셋 계산 및 파싱 실행
-    size_t effective_length = FindByteOffsetForPosition(source_code, target_row, target_col);
+    // 4. 바이트 오프셋으로 파싱 길이 결정 (FindByteOffsetForPosition 불필요)
+    size_t effective_length = byte_offset;
     if (effective_length > source_code.length()) effective_length = source_code.length();
 
     TSTree *tree = ts_parser_parse_string(
