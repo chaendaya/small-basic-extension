@@ -4,6 +4,7 @@ node_modules/
 # 2. 빌드 결과물 (Build Outputs)
 out/
 build/
+binding.gyp
 
 # 3. 보안 파일
 secrets.json
