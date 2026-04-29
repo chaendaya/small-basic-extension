@@ -12,6 +12,8 @@ secrets.json
 # 4. 로그 및 임시 데이터 (Logs & Temp)
 logged_actions.txt
 Test.data
+last_completion_dump.txt
+last_completion_prompt.txt
 
 # 5. VS Code 설정 및 패키징 파일 (Editor & Packaging)
 .vscode/*

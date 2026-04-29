@@ -40,6 +40,7 @@ export class CompletionService {
     private byteOffset: number;
     private languageId: string;
     private config: LanguageConfig;
+    private extensionPath: string;
     private dataReceivedCallback: ((data: any) => void) | null = null;
 
     // 언어 ID를 키로 하는 정적 캐시 (여러 인스턴스 간 DB 공유)
@@ -62,6 +63,7 @@ export class CompletionService {
         this.byteOffset = byteOffset;
         this.languageId = languageId;
         this.config = config;
+        this.extensionPath = extensionPath;
 
         // OpenAI API Key 로딩 (secrets.json)
         let apiKey = "";
@@ -138,13 +140,14 @@ export class CompletionService {
     // * 파서 상태들(states)에 매핑되는 구조적 후보들을 조회하고 합침
     // * 여러 State에서 공통적으로 등장하는 후보는 빈도수(value)를 합산
     // * 최종적으로 빈도수 높은 순서대로 정렬하여 반환
-    public lookupDB(states: number[]) {
+    public lookupDB(states: number[]): { finalResult: any[], stateLines: string[] } {
         const db = CompletionService.dbCache.get(this.languageId);
         const mapper = CompletionService.mapperCache.get(this.languageId);
+        const stateLines: string[] = [];
 
         if (!db) {
             console.warn(`[Warning] DB is not loaded for "${this.languageId}".`);
-            return [];
+            return { finalResult: [], stateLines };
         }
 
         const mergedMap = new Map<string, any>();
@@ -153,7 +156,9 @@ export class CompletionService {
             const stateKey = state.toString();
             if (db[stateKey]) {
                 const candidates = db[stateKey];
-                console.log(`State ${state}: Found ${candidates.length} candidates`);
+                const msg = `State ${state}: Found ${candidates.length} candidates`;
+                console.log(msg);
+                stateLines.push(msg);
                 candidates.forEach((item) => {
                     if (mergedMap.has(item.key)) {
                         mergedMap.get(item.key).value += item.value;
@@ -162,7 +167,9 @@ export class CompletionService {
                     }
                 });
             } else {
-                console.log(`No state ${state} in DB`);
+                const msg = `No state ${state} in DB`;
+                console.log(msg);
+                stateLines.push(msg);
             }
         }
 
@@ -185,7 +192,7 @@ export class CompletionService {
         } else {
             console.log("[lookupDB] No candidates found.");
         }
-        return finalResult;
+        return { finalResult, stateLines };
     }
 
     // helper
@@ -211,14 +218,77 @@ export class CompletionService {
     public getStructCandidates() {
         try {
             const mode = vscode.workspace.getConfiguration('completion').get<number>('parsingMode', 0);
-            console.log(`[${this.config.displayName}] Requesting Parse: byteOffset ${this.byteOffset}, mode=${mode}`);
+            const headerLine = `[${this.config.displayName}] Requesting Parse: byteOffset ${this.byteOffset}, mode=${mode}`;
+            console.log(headerLine);
             const states = this.parserAddon.getConversionResult(this.fullText, this.byteOffset, mode);
-            console.log("Parsed State Path:", JSON.stringify(states));
+            const pathLine = `Parsed State Path: ${JSON.stringify(states)}`;
+            console.log(pathLine);
 
-            const structCandidates = this.lookupDB(states);
+            const { finalResult, stateLines } = this.lookupDB(states);
+
+            // ============================================================
+            // [Debug Dump] Ctrl+Space 결과를 임시 파일로 저장
+            // - last_completion_dump.txt
+            // - last_completion_prompt.txt
+            // 두 파일 모두 매 호출마다 덮어쓰기. .gitignore 등록됨.
+            // ============================================================
+
+            // --- (1) last_completion_dump.txt ---
+            const dumpLines = [
+                headerLine,
+                pathLine,
+                ...stateLines,
+                "[lookupDB] Final Merged Result:",
+                ...finalResult.map(item => `${item.sortText} : ${item.key}`)
+            ];
+            const dumpPath = path.join(this.extensionPath, "last_completion_dump.txt");
+            try {
+                fs.writeFileSync(dumpPath, dumpLines.join("\n") + "\n", "utf8");
+            } catch (e) {
+                console.error("[Dump] Failed to write dump file:", e);
+            }
+
+            // --- (2) last_completion_prompt.txt ---
+            // byteOffset은 UTF-8 바이트 단위이므로 Buffer로 자른 뒤 다시 문자열로 디코드
+            const sourceUpToCursor = Buffer.from(this.fullText, "utf8")
+                .slice(0, this.byteOffset)
+                .toString("utf8");
+            const promptLines = [
+                `당신은 ${this.config.displayName} 문법 전문가입니다.`,
+                `아래는 특정 커서 위치에서의 자동완성 구조 후보 목록입니다.`,
+                ``,
+                `[커서 직전까지의 소스 코드 (커서 위치는 <<<커서>>>로 표시)]`,
+                sourceUpToCursor + "<<<커서>>>",
+                ``,
+                `[파서 State Path] ${JSON.stringify(states)}`,
+                `[State별 DB 조회 결과]`,
+                ...stateLines,
+                ``,
+                `[후보 목록 (sortText : key)]`,
+                ...finalResult.map(item => `${item.sortText} : ${item.key}`),
+                ``,
+                `[작업]`,
+                `각 후보가 커서 위치 직후에 문법적으로 나타날 수 있는지 판정하세요.`,
+                ``,
+                `출력 형식 (각 줄에 하나):`,
+                `  sortText | 판정 (valid|suspect|unknown) | 한 줄 사유`,
+                `- valid → 사유 생략 가능`,
+                `- suspect / unknown → 사유 필수`,
+                `- 확신이 없으면 "unknown"으로 표시. "suspect"는 근거를 댈 수 있을 때만.`
+            ];
+            const promptPath = path.join(this.extensionPath, "last_completion_prompt.txt");
+            try {
+                fs.writeFileSync(promptPath, promptLines.join("\n") + "\n", "utf8");
+            } catch (e) {
+                console.error("[Prompt] Failed to write prompt file:", e);
+            }
+
+            // ============================================================
+            // [Debug Dump End]
+            // ============================================================
 
             if (this.dataReceivedCallback) {
-                this.dataReceivedCallback(structCandidates);
+                this.dataReceivedCallback(finalResult);
             }
         } catch (e) {
             console.error("Parser Error:", e);
